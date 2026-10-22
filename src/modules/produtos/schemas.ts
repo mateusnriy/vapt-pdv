@@ -183,3 +183,39 @@ export const DisponibilidadeRespostaSchema = Type.Object(
 );
 
 export type DisponibilidadeRespostaTipo = Static<typeof DisponibilidadeRespostaSchema>;
+
+
+export const BaixaEstoqueItemSchema = Type.Object(
+  {
+    produto_id: Type.Integer({
+      minimum: 1,
+      maximum: 2147483647,
+      description: 'ID do produto',
+    }),
+    quantidade: Type.Integer({
+      minimum: 1,
+      maximum: 2147483647,
+      description: 'Quantidade a deduzir do estoque',
+    }),
+  },
+  { additionalProperties: false, description: 'Item para baixa de estoque' },
+);
+
+export type BaixaEstoqueItemTipo = Static<typeof BaixaEstoqueItemSchema>;
+
+export const BaixaEstoqueBodySchema = Type.Object(
+  {
+    comanda_id: Type.Integer({
+      minimum: 1,
+      maximum: 2147483647,
+      description: 'ID da comanda vinculada à baixa',
+    }),
+    itens: Type.Array(BaixaEstoqueItemSchema, {
+      minItems: 1,
+      description: 'Lista de itens a baixar do estoque',
+    }),
+  },
+  { additionalProperties: false, description: 'Payload para baixa de estoque de comanda' },
+);
+
+export type BaixaEstoqueBodyTipo = Static<typeof BaixaEstoqueBodySchema>;

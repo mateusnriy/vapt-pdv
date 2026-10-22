@@ -4,6 +4,7 @@ import { Type } from '@sinclair/typebox';
 import { RespostaErroSchema } from '../../shared/erros';
 import {
   AtualizarProdutoBodySchema,
+  BaixaEstoqueBodySchema,
   ConsultarDisponibilidadeQuerySchema,
   CriarProdutoBodySchema,
   DisponibilidadeRespostaSchema,
@@ -49,8 +50,8 @@ export const rotasProdutos: FastifyPluginAsync<OpcoesRotasProdutos> = async (
     {
       schema: {
         tags: ['Produtos'],
-        summary: 'Cadastrar novo produto',
-        description: 'Cadastra um novo produto no cardápio com estoque e preço.',
+        summary: 'Criar novo produto',
+        description: 'Cadastra um novo produto ativo no cardápio.',
         body: CriarProdutoBodySchema,
         response: {
           201: ProdutoRespostaSchema,
@@ -92,8 +93,8 @@ export const rotasProdutos: FastifyPluginAsync<OpcoesRotasProdutos> = async (
     {
       schema: {
         tags: ['Produtos'],
-        summary: 'Buscar produto por ID',
-        description: 'Retorna os detalhes de um produto pelo seu identificador único.',
+        summary: 'Consultar produto por ID',
+        description: 'Retorna os detalhes de um produto específico.',
         params: ProdutoIdParamsSchema,
         response: {
           200: ProdutoRespostaSchema,
@@ -114,8 +115,9 @@ export const rotasProdutos: FastifyPluginAsync<OpcoesRotasProdutos> = async (
     {
       schema: {
         tags: ['Produtos'],
-        summary: 'Atualizar produto parcialmente',
-        description: 'Atualiza campos de um produto existente (nome, categoria, preço, estoque, estoque mínimo).',
+        summary: 'Atualizar dados do produto',
+        description:
+          'Atualiza parcialmente campos permitidos do produto (nome, categoria, preço, estoque, estoque mínimo).',
         params: ProdutoIdParamsSchema,
         body: AtualizarProdutoBodySchema,
         response: {
@@ -138,7 +140,8 @@ export const rotasProdutos: FastifyPluginAsync<OpcoesRotasProdutos> = async (
       schema: {
         tags: ['Produtos'],
         summary: 'Inativar produto',
-        description: 'Inativa um produto de forma idempotente, mantendo o histórico no banco de dados.',
+        description:
+          'Inativa logicamente o produto (ativo=false), impedindo novos lançamentos. Operação idempotente.',
         params: ProdutoIdParamsSchema,
         response: {
           200: ProdutoRespostaSchema,
@@ -179,6 +182,28 @@ export const rotasProdutos: FastifyPluginAsync<OpcoesRotasProdutos> = async (
         quantidade,
       );
       return reply.send(resultado);
+    },
+  );
+
+  app.post(
+    '/produtos/baixa-estoque',
+    {
+      schema: {
+        tags: ['Produtos'],
+        summary: 'Baixa de estoque de comanda (Interna)',
+        description:
+          'Rota interna para realizar a dedução idempotente de estoque de itens pertencentes a uma comanda paga.',
+        body: BaixaEstoqueBodySchema,
+        response: {
+          200: Type.Object({ status: Type.Literal('ok') }),
+          400: RespostaErroSchema,
+          500: RespostaErroSchema,
+        },
+      },
+    },
+    async (request, reply) => {
+      await servico.baixarEstoque(request.body);
+      return reply.status(200).send({ status: 'ok' });
     },
   );
 };
