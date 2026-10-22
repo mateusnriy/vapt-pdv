@@ -46,6 +46,16 @@ export interface FiltrosListagemProdutos {
   offset?: number;
 }
 
+export interface BaixaEstoqueItemDados {
+  produto_id: number;
+  quantidade: number;
+}
+
+export interface BaixaEstoqueDados {
+  comanda_id: number;
+  itens: BaixaEstoqueItemDados[];
+}
+
 export interface ServicoProdutos {
   criar(dados: CriarProdutoDados): Promise<ProdutoEntidade>;
   listar(filtros?: FiltrosListagemProdutos): Promise<ProdutoEntidade[]>;
@@ -53,6 +63,7 @@ export interface ServicoProdutos {
   atualizar(id: number, dados: AtualizarProdutoDados): Promise<ProdutoEntidade>;
   inativar(id: number): Promise<ProdutoEntidade>;
   consultarDisponibilidade(id: number, quantidade?: number): Promise<DisponibilidadeProduto>;
+  baixarEstoque(dados: BaixaEstoqueDados, tx?: ClienteBanco): Promise<void>;
 }
 
 export function normalizarPreco(preco: string | number): string {
@@ -96,11 +107,25 @@ export function formatarPrecoParaString(preco: unknown): string {
 export class ServicoProdutosPrisma implements ServicoProdutos {
   constructor(private readonly prisma: ClienteBanco) {}
 
-  private obterRepositorio() {
-    if (!this.prisma.produto) {
+  private obterRepositorio(cliente: ClienteBanco = this.prisma) {
+    if (!cliente.produto) {
       throw ErroDominio.interno('Repositório de produtos não configurado no cliente do banco.');
     }
-    return this.prisma.produto;
+    return cliente.produto;
+  }
+
+  private obterRepositorioMovimentos(cliente: ClienteBanco = this.prisma) {
+    if (!cliente.movimentoEstoque) {
+      throw ErroDominio.interno('Repositório de movimentos de estoque não configurado no cliente do banco.');
+    }
+    return cliente.movimentoEstoque;
+  }
+
+  private async executarEmTransacao<T>(operacao: (tx: ClienteBanco) => Promise<T>): Promise<T> {
+    if (typeof this.prisma.$transaction === 'function') {
+      return this.prisma.$transaction(operacao);
+    }
+    return operacao(this.prisma);
   }
 
   private formatarProduto(registro: {
@@ -346,5 +371,67 @@ export class ServicoProdutosPrisma implements ServicoProdutos {
       estoque: produto.estoque,
       disponivel,
     };
+  }
+
+  async baixarEstoque(dados: BaixaEstoqueDados, tx?: ClienteBanco): Promise<void> {
+    if (
+      !Number.isFinite(dados.comanda_id) ||
+      !Number.isInteger(dados.comanda_id) ||
+      dados.comanda_id < 1
+    ) {
+      throw ErroDominio.validacao('Identificador de comanda inválido.', {
+        comanda_id: 'O ID da comanda deve ser um número inteiro maior ou igual a 1.',
+      });
+    }
+
+    if (!Array.isArray(dados.itens) || dados.itens.length === 0) {
+      throw ErroDominio.validacao('Itens para baixa de estoque não informados.', {
+        itens: 'A lista de itens deve conter pelo menos um item.',
+      });
+    }
+
+    const executar = async (contexto: ClienteBanco) => {
+      const repoMovimentos = this.obterRepositorioMovimentos(contexto);
+      const repoProdutos = this.obterRepositorio(contexto);
+
+      // Idempotência por comanda_id (RN10 / RN18)
+      const movimentoExistente = await repoMovimentos.findFirst({
+        where: { comanda_id: dados.comanda_id },
+      });
+
+      if (movimentoExistente) {
+        return;
+      }
+
+      for (const item of dados.itens) {
+        if (!Number.isFinite(item.quantidade) || item.quantidade <= 0) {
+          continue;
+        }
+
+        await repoProdutos.update({
+          where: { id: item.produto_id },
+          data: {
+            estoque: {
+              decrement: item.quantidade,
+            },
+          },
+        });
+
+        await repoMovimentos.create({
+          data: {
+            produto_id: item.produto_id,
+            quantidade: -item.quantidade,
+            motivo: `VENDA_COMANDA #${dados.comanda_id}`,
+            comanda_id: dados.comanda_id,
+          },
+        });
+      }
+    };
+
+    if (tx) {
+      await executar(tx);
+    } else {
+      await this.executarEmTransacao(executar);
+    }
   }
 }
