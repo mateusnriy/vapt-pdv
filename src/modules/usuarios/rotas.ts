@@ -10,27 +10,12 @@ import {
   UsuarioRespostaSchema,
   ValidarGarcomRespostaSchema,
 } from './schemas';
-import { ServicoUsuarios, UsuarioEntidade } from './servico';
+import { ServicoUsuarios } from './usuarios.service';
+import { UsuariosController } from './usuarios.controller';
 
 export interface OpcoesRotasUsuarios {
   servico: ServicoUsuarios;
-}
-
-function serializarUsuario(usuario: UsuarioEntidade) {
-  return {
-    id: usuario.id,
-    nome: usuario.nome,
-    perfil: usuario.perfil,
-    ativo: usuario.ativo,
-    criado_em:
-      usuario.criado_em instanceof Date
-        ? usuario.criado_em.toISOString()
-        : String(usuario.criado_em),
-    atualizado_em:
-      usuario.atualizado_em instanceof Date
-        ? usuario.atualizado_em.toISOString()
-        : String(usuario.atualizado_em),
-  };
+  controller?: UsuariosController;
 }
 
 export const rotasUsuarios: FastifyPluginAsync<OpcoesRotasUsuarios> = async (
@@ -38,7 +23,7 @@ export const rotasUsuarios: FastifyPluginAsync<OpcoesRotasUsuarios> = async (
   opcoes,
 ) => {
   const app = fastify.withTypeProvider<TypeBoxTypeProvider>();
-  const servico = opcoes.servico;
+  const controller = opcoes.controller ?? new UsuariosController(opcoes.servico);
 
   app.post(
     '/usuarios',
@@ -55,10 +40,7 @@ export const rotasUsuarios: FastifyPluginAsync<OpcoesRotasUsuarios> = async (
         },
       },
     },
-    async (request, reply) => {
-      const usuario = await servico.criar(request.body);
-      return reply.status(201).send(serializarUsuario(usuario));
-    },
+    async (request, reply) => controller.criar(request, reply),
   );
 
   app.get(
@@ -76,10 +58,7 @@ export const rotasUsuarios: FastifyPluginAsync<OpcoesRotasUsuarios> = async (
         },
       },
     },
-    async (request, reply) => {
-      const usuarios = await servico.listar(request.query);
-      return reply.send(usuarios.map(serializarUsuario));
-    },
+    async (request, reply) => controller.listar(request, reply),
   );
 
   app.get(
@@ -98,10 +77,7 @@ export const rotasUsuarios: FastifyPluginAsync<OpcoesRotasUsuarios> = async (
         },
       },
     },
-    async (request, reply) => {
-      const usuario = await servico.buscarPorId(request.params.id);
-      return reply.send(serializarUsuario(usuario));
-    },
+    async (request, reply) => controller.buscarPorId(request, reply),
   );
 
   app.patch(
@@ -121,10 +97,7 @@ export const rotasUsuarios: FastifyPluginAsync<OpcoesRotasUsuarios> = async (
         },
       },
     },
-    async (request, reply) => {
-      const usuario = await servico.atualizar(request.params.id, request.body);
-      return reply.send(serializarUsuario(usuario));
-    },
+    async (request, reply) => controller.atualizar(request, reply),
   );
 
   app.post(
@@ -143,10 +116,7 @@ export const rotasUsuarios: FastifyPluginAsync<OpcoesRotasUsuarios> = async (
         },
       },
     },
-    async (request, reply) => {
-      const usuario = await servico.inativar(request.params.id);
-      return reply.send(serializarUsuario(usuario));
-    },
+    async (request, reply) => controller.inativar(request, reply),
   );
 
   app.get(
@@ -166,9 +136,6 @@ export const rotasUsuarios: FastifyPluginAsync<OpcoesRotasUsuarios> = async (
         },
       },
     },
-    async (request, reply) => {
-      const resultado = await servico.validarGarcom(request.params.id);
-      return reply.send(resultado);
-    },
+    async (request, reply) => controller.validarGarcom(request, reply),
   );
 };
