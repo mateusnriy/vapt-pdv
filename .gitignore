@@ -43,7 +43,7 @@ Thumbs.db
 .idea/
 
 # Outros
-docs/
 AGENTS.md
 CHANGELOG.md
 STATUS.md
+DESIGN.md
