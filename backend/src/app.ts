@@ -1,4 +1,7 @@
+import path from 'path';
+import fs from 'fs';
 import Fastify, { FastifyError, FastifyInstance, FastifyLoggerOptions } from 'fastify';
+import fastifyStatic from '@fastify/static';
 import swagger from '@fastify/swagger';
 import swaggerUi from '@fastify/swagger-ui';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
@@ -77,6 +80,26 @@ export async function buildApp(opcoes: OpcoesApp = {}): Promise<FastifyInstance>
   await app.register(swaggerUi, {
     routePrefix: '/docs',
   });
+
+  // Servir arquivos estáticos do Frontend Web/PWA do PDV Core
+  const pastaPublica = fs.existsSync(path.join(__dirname, '..', 'public'))
+    ? path.join(__dirname, '..', 'public')
+    : path.join(process.cwd(), 'public');
+
+  if (fs.existsSync(pastaPublica)) {
+    await app.register(fastifyStatic, {
+      root: pastaPublica,
+      prefix: '/',
+    });
+
+    app.get('/garcom', async (_request, reply) => {
+      return reply.sendFile('index.html');
+    });
+
+    app.get('/caixa', async (_request, reply) => {
+      return reply.sendFile('index.html');
+    });
+  }
 
   app.setNotFoundHandler((request, reply) => {
     return reply
