@@ -2,7 +2,7 @@ import React from 'react';
 import { cn } from '../../lib/utils';
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: 'livre' | 'ocupada' | 'conta_pedida' | 'fechada' | 'brand' | 'neutral';
+  variant?: 'livre' | 'ocupada' | 'conta_pedida' | 'fechada' | 'esgotado' | 'brand' | 'neutral';
   size?: 'sm' | 'md' | 'lg';
   icon?: React.ReactNode;
 }
@@ -20,6 +20,7 @@ export const Badge: React.FC<BadgeProps> = ({
     ocupada: 'bg-brand-soft text-brand-text border border-brand/30 font-semibold',
     conta_pedida: 'bg-danger-soft text-danger border border-danger/30 font-bold animate-pulse',
     fechada: 'bg-surface-2 text-text-2 border border-border font-medium',
+    esgotado: 'bg-danger-soft text-danger border border-danger/30 font-semibold',
     brand: 'bg-brand text-on-brand font-bold',
     neutral: 'bg-surface-2 text-text-2 border border-border font-medium',
   };

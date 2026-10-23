@@ -65,9 +65,23 @@ export async function request<T>(endpoint: string, options: RequestOptions = {})
         const errorResponse = data as ApiErrorResponse;
         throw new ApiError(response.status, errorResponse.erro);
       }
+
+      let mensagem = response.statusText || 'Erro inesperado na requisição';
+      if (typeof data === 'string' && data.trim()) {
+        mensagem = data;
+      } else if (data && typeof data === 'object') {
+        const obj = data as Record<string, unknown>;
+        if (typeof obj.mensagem === 'string') {
+          mensagem = obj.mensagem;
+        } else if (typeof obj.message === 'string') {
+          mensagem = obj.message;
+        }
+      }
+
       throw new ApiError(response.status, {
         codigo: `HTTP_${response.status}`,
-        mensagem: typeof data === 'string' && data ? data : response.statusText,
+        mensagem,
+        detalhes: typeof data === 'object' ? (data as Record<string, unknown>) : undefined,
       });
     }
 

@@ -5,10 +5,8 @@ import {
   Monitor,
   Activity,
   Plus,
-  Send,
   CreditCard,
   Search,
-  Clock,
   User,
   Coffee,
   CheckCircle2,
@@ -36,23 +34,23 @@ import { useComandaStore } from './stores/useComandaStore';
 import {
   useComandasAbertas,
   useAbrirComanda,
-  useLancarItensLote,
   useFecharComanda,
 } from './hooks/useComandas';
 import { useProdutosDisponiveis } from './hooks/useProdutos';
 import { useGarconsAtivos } from './hooks/useUsuarios';
 import { ApiError } from './services/apiClient';
+import { ModoGarcomPage } from './features/garcom/ModoGarcomPage';
 
 export function App() {
   const { setModo, nomeOperador } = useSessionStore();
   const {
-    carrinho,
+    comandaAtivaId,
     incrementarItem,
-    decrementarItem,
     limparCarrinho,
     obterTotalItensCarrinho,
-    obterItensParaLote,
   } = useComandaStore();
+
+  const totalItensCarrinho = obterTotalItensCarrinho();
 
   const [activeTab, setActiveTab] = useState<'design' | 'garcom' | 'caixa'>('design');
   const [apiHealth, setApiHealth] = useState<'checking' | 'online' | 'offline'>('checking');
@@ -76,8 +74,13 @@ export function App() {
 
   // Mutações TanStack Query
   const abrirComandaMut = useAbrirComanda();
-  const lancarItensMut = useLancarItensLote();
   const fecharComandaMut = useFecharComanda();
+
+  // Comanda focada: selecionada pelo usuário ou a primeira aberta disponível
+  const comandaFocada =
+    comandasAbertas?.find((c) => c.id === comandaAtivaId) ||
+    (comandasAbertas && comandasAbertas[0]) ||
+    null;
 
   // Checagem de conectividade com a API Fastify via Proxy
   useEffect(() => {
@@ -123,37 +126,6 @@ export function App() {
       }
     }
   };
-
-  const handleEnviarLoteCozinha = async (comandaId?: number) => {
-    const itens = obterItensParaLote();
-    if (itens.length === 0) {
-      showToast('erro', 'Selecione ao menos 1 item para enviar.');
-      return;
-    }
-
-    const idAlvo = comandaId || (comandasAbertas && comandasAbertas[0]?.id);
-    if (!idAlvo) {
-      showToast('erro', 'Nenhuma comanda aberta selecionada.');
-      return;
-    }
-
-    try {
-      await lancarItensMut.mutateAsync({
-        comandaId: idAlvo,
-        itens,
-      });
-      showToast('sucesso', `${itens.length} itens enviados para a cozinha com sucesso!`);
-      limparCarrinho();
-    } catch (err) {
-      if (err instanceof ApiError) {
-        showToast('erro', `${err.codigo}: ${err.message}`);
-      } else {
-        showToast('erro', 'Erro ao enviar itens para a cozinha.');
-      }
-    }
-  };
-
-  const totalItensCarrinho = obterTotalItensCarrinho();
 
   return (
     <div className="min-h-screen bg-bg text-text flex flex-col">
@@ -483,146 +455,8 @@ export function App() {
 
         {/* ================= ABA 2: MODO GARÇOM ================= */}
         {activeTab === 'garcom' && (
-          <div className="max-w-md mx-auto space-y-4 animate-fadeIn">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-black text-text">Salão & Mesas</h2>
-                <p className="text-xs text-text-2">Modo Garçom PWA · {nomeOperador}</p>
-              </div>
-              <Badge variant="ocupada" icon={<Clock className="w-3.5 h-3.5" />}>
-                {comandasAbertas ? `${comandasAbertas.length} abertas` : '0 abertas'}
-              </Badge>
-            </div>
-
-            {/* Grade de Mesas do Salão com Dados Reais da API */}
-            <div className="grid grid-cols-2 gap-3">
-              {[1, 2, 3, 4, 5, 6].map((numMesa) => {
-                const cmd = comandasAbertas?.find((c) => String(c.mesa) === String(numMesa));
-                const ocupada = !!cmd;
-
-                return (
-                  <Card
-                    key={numMesa}
-                    interactive
-                    onClick={() => {
-                      if (!ocupada) {
-                        setMesaInput(String(numMesa));
-                        setIsModalOpen(true);
-                      }
-                    }}
-                    className={ocupada ? 'border-brand ring-1 ring-brand/50' : 'border-dashed'}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <span className="text-2xl font-black text-text">
-                        {numMesa < 10 ? `0${numMesa}` : numMesa}
-                      </span>
-                      {ocupada ? (
-                        <Badge variant="ocupada">Ocupada</Badge>
-                      ) : (
-                        <Badge variant="livre">Livre</Badge>
-                      )}
-                    </div>
-                    {ocupada ? (
-                      <div className="space-y-0.5">
-                        <span className="text-xs text-text-2 flex items-center gap-1">
-                          <Clock className="w-3 h-3" /> Em consumo
-                        </span>
-                        <span className="text-sm font-extrabold text-text block tabular-nums">
-                          {formatCurrency(cmd.subtotal)}
-                        </span>
-                      </div>
-                    ) : (
-                      <p className="text-xs text-text-2">Toque para abrir</p>
-                    )}
-                  </Card>
-                );
-              })}
-            </div>
-
-            {/* Cardápio Rápido Integrado com o Carrinho Zustand */}
-            <div className="pt-2">
-              <h3 className="text-sm font-bold text-text uppercase tracking-wider mb-2">
-                Cardápio do Salão (Seleção para Envio)
-              </h3>
-              <div className="space-y-2">
-                {produtos && produtos.length > 0 ? (
-                  produtos.map((p) => {
-                    const qtd = carrinho[p.id]?.quantidade || 0;
-                    return (
-                      <Card key={p.id} className="flex items-center justify-between p-3">
-                        <div>
-                          <h4 className="font-bold text-sm text-text">{p.nome}</h4>
-                          <span className="text-xs font-semibold text-text-2 tabular-nums">
-                            {formatCurrency(p.preco)}
-                          </span>
-                        </div>
-                        <Stepper
-                          value={qtd}
-                          onChange={(novaQtd) => {
-                            if (novaQtd > qtd) {
-                              incrementarItem(p.id, p.nome, p.preco);
-                            } else {
-                              decrementarItem(p.id);
-                            }
-                          }}
-                        />
-                      </Card>
-                    );
-                  })
-                ) : (
-                  <>
-                    <Card className="flex items-center justify-between p-3">
-                      <div>
-                        <h4 className="font-bold text-sm text-text">Chopp Artesanal 500ml</h4>
-                        <span className="text-xs font-semibold text-text-2 tabular-nums">
-                          {formatCurrency(14.0)}
-                        </span>
-                      </div>
-                      <Stepper
-                        value={carrinho[1]?.quantidade || 0}
-                        onChange={(novaQtd) => {
-                          const atual = carrinho[1]?.quantidade || 0;
-                          if (novaQtd > atual) incrementarItem(1, 'Chopp Artesanal 500ml', '14.00');
-                          else decrementarItem(1);
-                        }}
-                      />
-                    </Card>
-                    <Card className="flex items-center justify-between p-3">
-                      <div>
-                        <h4 className="font-bold text-sm text-text">Hambúrguer Vapt Costela</h4>
-                        <span className="text-xs font-semibold text-text-2 tabular-nums">
-                          {formatCurrency(32.0)}
-                        </span>
-                      </div>
-                      <Stepper
-                        value={carrinho[2]?.quantidade || 0}
-                        onChange={(novaQtd) => {
-                          const atual = carrinho[2]?.quantidade || 0;
-                          if (novaQtd > atual)
-                            incrementarItem(2, 'Hambúrguer Vapt Costela', '32.00');
-                          else decrementarItem(2);
-                        }}
-                      />
-                    </Card>
-                  </>
-                )}
-              </div>
-            </div>
-
-            {/* Barra Flutuante de Envio em Lote */}
-            <div className="sticky bottom-4 pt-2">
-              <Button
-                variant="primary"
-                size="action"
-                fullWidth
-                disabled={totalItensCarrinho === 0 || lancarItensMut.isPending}
-                isLoading={lancarItensMut.isPending}
-                leftIcon={<Send className="w-5 h-5" />}
-                onClick={() => handleEnviarLoteCozinha()}
-              >
-                Enviar {totalItensCarrinho > 0 ? `(${totalItensCarrinho}) ` : ''}para a Cozinha
-              </Button>
-            </div>
+          <div className="animate-fadeIn">
+            <ModoGarcomPage apiHealth={apiHealth} />
           </div>
         )}
 
@@ -716,13 +550,11 @@ export function App() {
                 <div className="flex items-center justify-between border-b border-border pb-3">
                   <div>
                     <h3 className="font-black text-lg text-text">
-                      {comandasAbertas && comandasAbertas[0]
-                        ? `Mesa ${comandasAbertas[0].mesa}`
-                        : 'Mesa Balcão'}
+                      {comandaFocada ? `Mesa ${comandaFocada.mesa}` : 'Mesa Balcão'}
                     </h3>
                     <span className="text-xs text-text-2">
-                      {comandasAbertas && comandasAbertas[0]
-                        ? `Comanda #${comandasAbertas[0].id}`
+                      {comandaFocada
+                        ? `Comanda #${comandaFocada.id}`
                         : 'Nenhuma comanda ativa'}
                     </span>
                   </div>
@@ -734,9 +566,7 @@ export function App() {
                   <div className="flex justify-between text-xs text-text-2">
                     <span>Subtotal</span>
                     <span className="tabular-nums font-semibold text-text">
-                      {formatCurrency(
-                        comandasAbertas && comandasAbertas[0] ? comandasAbertas[0].subtotal : 60.0
-                      )}
+                      {formatCurrency(comandaFocada?.subtotal ?? '0.00')}
                     </span>
                   </div>
                   <div className="flex justify-between text-xs text-text-2 items-center">
@@ -746,24 +576,16 @@ export function App() {
                     </span>
                     <span className="tabular-nums font-semibold text-text">
                       {taxa10
-                        ? formatCurrency(
-                            comandasAbertas && comandasAbertas[0] && comandasAbertas[0].subtotal
-                              ? Number(comandasAbertas[0].subtotal) * 0.1
-                              : 6.0
-                          )
+                        ? comandaFocada?.taxa_servico
+                          ? formatCurrency(comandaFocada.taxa_servico)
+                          : '(calculada no fechamento)'
                         : 'R$ 0,00'}
                     </span>
                   </div>
                   <div className="flex justify-between items-baseline pt-2 border-t border-border">
                     <span className="text-sm font-bold text-text">Total</span>
                     <span className="text-2xl font-black text-text tabular-nums">
-                      {formatCurrency(
-                        comandasAbertas && comandasAbertas[0] && comandasAbertas[0].subtotal
-                          ? Number(comandasAbertas[0].subtotal) * (taxa10 ? 1.1 : 1.0)
-                          : taxa10
-                          ? 66.0
-                          : 60.0
-                      )}
+                      {formatCurrency(comandaFocada?.total ?? comandaFocada?.subtotal ?? '0.00')}
                     </span>
                   </div>
                 </div>
@@ -772,17 +594,21 @@ export function App() {
                   variant="primary"
                   size="action"
                   fullWidth
+                  disabled={!comandaFocada || fecharComandaMut.isPending}
                   leftIcon={<Receipt className="w-5 h-5" />}
                   onClick={() => {
-                    if (comandasAbertas && comandasAbertas[0]) {
+                    if (comandaFocada) {
                       fecharComandaMut.mutate(
                         {
-                          comandaId: comandasAbertas[0].id,
+                          comandaId: comandaFocada.id,
                           dto: { aplicar_taxa_servico: taxa10 },
                         },
                         {
                           onSuccess: () => {
-                            showToast('sucesso', 'Comanda fechada para pagamento!');
+                            showToast(
+                              'sucesso',
+                              `Comanda #${comandaFocada.id} (Mesa ${comandaFocada.mesa}) fechada!`
+                            );
                           },
                           onError: (err) => {
                             showToast(
@@ -797,7 +623,7 @@ export function App() {
                     }
                   }}
                 >
-                  Fechar & Cobrar (F8)
+                  {fecharComandaMut.isPending ? 'Fechando Conta...' : 'Fechar & Cobrar (F8)'}
                 </Button>
               </Card>
             </div>

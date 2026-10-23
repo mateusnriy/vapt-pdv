@@ -95,6 +95,7 @@ export interface FecharComandaDto {
 
 export interface PagarComandaDto {
   forma_pagamento: FormaPagamento;
+  documento_cliente?: string | null;
 }
 
 export interface ListarComandasFiltros {

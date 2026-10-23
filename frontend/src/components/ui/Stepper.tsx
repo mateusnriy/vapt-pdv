@@ -45,13 +45,13 @@ export const Stepper: React.FC<StepperProps> = ({
         type="button"
         onClick={handleDecrement}
         disabled={value <= min || disabled}
-        className="w-10 h-10 min-h-[40px] min-w-[40px] rounded-lg bg-surface flex items-center justify-center text-text hover:bg-border/60 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shadow-soft active:scale-95"
+        className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-lg bg-surface flex items-center justify-center text-text hover:bg-border/60 transition-colors disabled:opacity-30 disabled:cursor-not-allowed shadow-soft active:scale-95"
         aria-label="Diminuir quantidade"
       >
         <Minus className="w-4 h-4" />
       </button>
 
-      <span className="w-10 text-center font-bold text-sm text-text tabular-nums select-none">
+      <span className="w-11 text-center font-bold text-sm text-text tabular-nums select-none">
         {value}
       </span>
 
@@ -59,7 +59,7 @@ export const Stepper: React.FC<StepperProps> = ({
         type="button"
         onClick={handleIncrement}
         disabled={value >= max || disabled}
-        className="w-10 h-10 min-h-[40px] min-w-[40px] rounded-lg bg-brand text-on-brand flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed shadow-soft active:scale-95"
+        className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-lg bg-brand text-on-brand flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed shadow-soft active:scale-95"
         aria-label="Aumentar quantidade"
       >
         <Plus className="w-4 h-4 font-bold" />

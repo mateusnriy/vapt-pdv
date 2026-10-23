@@ -18,11 +18,18 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
   disabled = false,
   className,
 }) => {
+  const handleToggle = () => {
+    if (!disabled) {
+      onChange(!checked);
+    }
+  };
+
   return (
-    <label
+    <div
+      onClick={handleToggle}
       className={cn(
         'inline-flex items-center justify-between gap-3 cursor-pointer select-none py-1.5 min-h-[44px]',
-        disabled && 'opacity-50 cursor-not-allowed',
+        disabled && 'opacity-50 cursor-not-allowed pointer-events-none',
         className
       )}
     >
@@ -38,7 +45,10 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
         role="switch"
         aria-checked={checked}
         disabled={disabled}
-        onClick={() => !disabled && onChange(!checked)}
+        onClick={(e) => {
+          e.stopPropagation();
+          handleToggle();
+        }}
         className={cn(
           'relative inline-flex h-7 w-12 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus-visible:ring-2 focus-visible:ring-text/20',
           checked ? 'bg-brand' : 'bg-border'
@@ -51,6 +61,6 @@ export const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
           )}
         />
       </button>
-    </label>
+    </div>
   );
 };
