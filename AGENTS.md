@@ -12,7 +12,7 @@ VaptPDV: PDV para bares e lanchonetes (comanda, itens, pagamento, estoque), proj
 - Nunca apague produto ou usuário fisicamente; inative (`ativo=false`).
 - Nunca use `Float`/`number` para dinheiro; `Decimal` no banco, string de 2 casas na API.
 - Nunca faça commit, tag ou push sem o usuário pedir. Tags de entrega (`entrega-1-cloud`, `entrega-2-microsservicos`, `entrega-3-containers`, `entrega-4-mensageria`) são criadas pelo usuário.
-- Não adicione ao escopo da disciplina: frontend/PWA, autenticação, relatórios, alerta de estoque, Kubernetes (ver Non-goals do SPEC).
+- Frontend Web/PWA do PDV Core (Modo Garçom e Modo Caixa) faz parte integrante do Módulo 1 servido pelo Fastify; autenticação complexa, relatórios avançados fora do BI e Kubernetes permanecem non-goals.
 
 ## Where things are
 

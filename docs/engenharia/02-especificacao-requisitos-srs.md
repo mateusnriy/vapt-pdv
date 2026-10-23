@@ -1,14 +1,10 @@
-# 02 — Especificação de Requisitos de Software (SRS)
+# 02 - Especificação de Requisitos de Software (SRS)
 
 | Metadado | Valor |
 | :--- | :--- |
-| **Projeto** | **VaptPDV** — Sistema Distribuído de Ponto de Venda para Bares e Lanchonetes |
-| **Padrão de Referência** | IEEE Std 830-1998 / ISO/IEC/IEEE 29148:2018 (Systems and Software Engineering — Life Cycle Processes — Requirements Engineering) |
-| **Versão** | 2.0.0 |
+| **Projeto** | **VaptPDV** |
 | **Data** | 21 de Outubro de 2026 |
-| **Instituição / Disciplina** | DCC/UERN — Sistemas Distribuídos (3ª Unidade) — Docentes: Profa. Glaucia Melissa e Profa. Luiziane Paulino |
 | **Equipe de Desenvolvimento** | Kaio França e Mateus Neri |
-| **Agentes BMad Responsáveis** | **Mary** (Business Analyst) & **John** (Product Manager) |
 
 ---
 

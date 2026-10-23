@@ -14,47 +14,14 @@ import {
   ParametroIdComandaSchema,
   ParametroItemComandaSchema,
 } from './schemas';
-import { ComandaEntidade, ServicoComandas } from './servico';
+import { ServicoComandas } from './comandas.service';
+import { ComandasController, serializarComanda, serializarItem } from './comandas.controller';
+
+export { serializarComanda, serializarItem };
 
 export interface OpcoesRotasComandas {
   servico: ServicoComandas;
-}
-
-export function serializarComanda(comanda: ComandaEntidade) {
-  return {
-    id: comanda.id,
-    mesa: comanda.mesa,
-    nome_cliente: comanda.nome_cliente,
-    garcom_id: comanda.garcom_id,
-    status: comanda.status,
-    subtotal: comanda.subtotal,
-    taxa_servico: comanda.taxa_servico,
-    total: comanda.total,
-    forma_pagamento: comanda.forma_pagamento,
-    aberta_em:
-      comanda.aberta_em instanceof Date
-        ? comanda.aberta_em.toISOString()
-        : String(comanda.aberta_em),
-    fechada_em:
-      comanda.fechada_em === null
-        ? null
-        : comanda.fechada_em instanceof Date
-          ? comanda.fechada_em.toISOString()
-          : String(comanda.fechada_em),
-    paga_em:
-      comanda.paga_em === null
-        ? null
-        : comanda.paga_em instanceof Date
-          ? comanda.paga_em.toISOString()
-          : String(comanda.paga_em),
-    itens: comanda.itens.map((item) => ({
-      id: item.id,
-      produto_id: item.produto_id,
-      nome_copiado: item.nome_copiado,
-      preco_copiado: item.preco_copiado,
-      quantidade: item.quantidade,
-    })),
-  };
+  controller?: ComandasController;
 }
 
 export const rotasComandas: FastifyPluginAsync<OpcoesRotasComandas> = async (
@@ -62,7 +29,7 @@ export const rotasComandas: FastifyPluginAsync<OpcoesRotasComandas> = async (
   opcoes,
 ) => {
   const app = fastify.withTypeProvider<TypeBoxTypeProvider>();
-  const servico = opcoes.servico;
+  const controller = opcoes.controller ?? new ComandasController(opcoes.servico);
 
   app.post(
     '/comandas',
@@ -82,10 +49,7 @@ export const rotasComandas: FastifyPluginAsync<OpcoesRotasComandas> = async (
         },
       },
     },
-    async (request, reply) => {
-      const comanda = await servico.abrir(request.body);
-      return reply.status(201).send(serializarComanda(comanda));
-    },
+    async (request, reply) => controller.abrir(request, reply),
   );
 
   app.get(
@@ -104,10 +68,7 @@ export const rotasComandas: FastifyPluginAsync<OpcoesRotasComandas> = async (
         },
       },
     },
-    async (request, reply) => {
-      const comandas = await servico.listar(request.query);
-      return reply.send(comandas.map(serializarComanda));
-    },
+    async (request, reply) => controller.listar(request, reply),
   );
 
   app.get(
@@ -127,10 +88,7 @@ export const rotasComandas: FastifyPluginAsync<OpcoesRotasComandas> = async (
         },
       },
     },
-    async (request, reply) => {
-      const comanda = await servico.buscarPorId(request.params.id);
-      return reply.send(serializarComanda(comanda));
-    },
+    async (request, reply) => controller.buscarPorId(request, reply),
   );
 
   app.post(
@@ -153,10 +111,7 @@ export const rotasComandas: FastifyPluginAsync<OpcoesRotasComandas> = async (
         },
       },
     },
-    async (request, reply) => {
-      const item = await servico.lancarItem(request.params.id, request.body);
-      return reply.status(201).send(item);
-    },
+    async (request, reply) => controller.lancarItem(request, reply),
   );
 
   app.patch(
@@ -179,14 +134,7 @@ export const rotasComandas: FastifyPluginAsync<OpcoesRotasComandas> = async (
         },
       },
     },
-    async (request, reply) => {
-      const item = await servico.ajustarItem(
-        request.params.id,
-        request.params.itemId,
-        request.body,
-      );
-      return reply.status(200).send(item);
-    },
+    async (request, reply) => controller.ajustarItem(request, reply),
   );
 
   app.delete(
@@ -207,10 +155,7 @@ export const rotasComandas: FastifyPluginAsync<OpcoesRotasComandas> = async (
         },
       },
     },
-    async (request, reply) => {
-      await servico.removerItem(request.params.id, request.params.itemId);
-      return reply.status(204).send(null);
-    },
+    async (request, reply) => controller.removerItem(request, reply),
   );
 
   app.post(
@@ -232,10 +177,7 @@ export const rotasComandas: FastifyPluginAsync<OpcoesRotasComandas> = async (
         },
       },
     },
-    async (request, reply) => {
-      const comanda = await servico.fechar(request.params.id, request.body);
-      return reply.status(200).send(serializarComanda(comanda));
-    },
+    async (request, reply) => controller.fechar(request, reply),
   );
 
   app.post(
@@ -256,10 +198,7 @@ export const rotasComandas: FastifyPluginAsync<OpcoesRotasComandas> = async (
         },
       },
     },
-    async (request, reply) => {
-      const comanda = await servico.cancelar(request.params.id);
-      return reply.status(200).send(serializarComanda(comanda));
-    },
+    async (request, reply) => controller.cancelar(request, reply),
   );
 
   app.post(
@@ -281,9 +220,6 @@ export const rotasComandas: FastifyPluginAsync<OpcoesRotasComandas> = async (
         },
       },
     },
-    async (request, reply) => {
-      const comanda = await servico.pagar(request.params.id, request.body);
-      return reply.status(200).send(serializarComanda(comanda));
-    },
+    async (request, reply) => controller.pagar(request, reply),
   );
 };

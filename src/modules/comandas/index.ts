@@ -3,11 +3,15 @@ import { ClienteBanco, obterPrisma } from '../../shared/prisma';
 import { ServicoUsuarios, ServicoUsuariosPrisma } from '../usuarios/servico';
 import { ServicoProdutos, ServicoProdutosPrisma } from '../produtos/servico';
 import { rotasComandas } from './rotas';
-import { ServicoComandas, ServicoComandasPrisma } from './servico';
+import { IComandasRepository, ComandasRepositoryPrisma } from './comandas.repository';
+import { ComandasService, ServicoComandas } from './comandas.service';
+import { ComandasController } from './comandas.controller';
 
 export interface OpcoesModuloComandas {
   prisma?: ClienteBanco;
+  repositorio?: IComandasRepository;
   servico?: ServicoComandas;
+  controller?: ComandasController;
   servicoUsuarios?: ServicoUsuarios;
   servicoProdutos?: ServicoProdutos;
 }
@@ -25,13 +29,21 @@ export const moduloComandas: FastifyPluginAsync<OpcoesModuloComandas> = async (
     opcoes.servicoUsuarios ?? new ServicoUsuariosPrisma(prisma);
   const servicoProdutos =
     opcoes.servicoProdutos ?? new ServicoProdutosPrisma(prisma);
+  const repositorio =
+    opcoes.repositorio ?? new ComandasRepositoryPrisma(prisma);
   const servico =
     opcoes.servico ??
-    new ServicoComandasPrisma(prisma, servicoUsuarios, servicoProdutos);
+    new ComandasService(repositorio, servicoUsuarios, servicoProdutos);
+  const controller =
+    opcoes.controller ?? new ComandasController(servico);
 
-  await fastify.register(rotasComandas, { servico });
+  await fastify.register(rotasComandas, { servico, controller });
 };
 
+export * from './comanda.entity';
+export * from './comandas.repository';
+export * from './comandas.service';
+export * from './comandas.controller';
 export * from './schemas';
 export * from './servico';
 export * from './rotas';

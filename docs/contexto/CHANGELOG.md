@@ -2,6 +2,20 @@
 
 Todas as mudanças relevantes deste projeto são documentadas neste arquivo, organizadas pelas entregas incrementais da disciplina de Sistemas Distribuídos (DCC/UERN).
 
+## [0.2.0-refactor] — 2026-10-23 — Refatoração de Arquitetura em Camadas do PDV Core
+
+### Modificado
+- **Módulo de Comandas (`src/modules/comandas`):**
+  - Desacoplamento do arquivo monolítico `servico.ts` (1.072 linhas) na arquitetura em camadas oficial do projeto:
+    - [`comanda.entity.ts`](src/modules/comandas/comanda.entity.ts): Entidades de domínio (`ComandaEntidade`, `ItemComandaEntidade`), DTOs e helpers de validação/formatação monetária.
+    - [`comandas.repository.ts`](src/modules/comandas/comandas.repository.ts): Interface `IComandasRepository` e implementação `ComandasRepositoryPrisma` com transações e consultas SQL.
+    - [`comandas.service.ts`](src/modules/comandas/comandas.service.ts): Interface `ServicoComandas` e classe de regras de negócio `ComandasService`.
+    - [`comandas.controller.ts`](src/modules/comandas/comandas.controller.ts): Classe `ComandasController` orquestrando requisições e respostas HTTP e serialização.
+    - [`rotas.ts`](src/modules/comandas/rotas.ts): Atualizado para delegar endpoints diretamente ao `ComandasController`.
+    - [`servico.ts`](src/modules/comandas/servico.ts): Mantido como adaptador retrocompatível `ServicoComandasPrisma extends ComandasService`.
+    - [`index.ts`](src/modules/comandas/index.ts): Injeção de dependências e reexportações unificadas.
+  - Todos os 135 testes automatizados (Vitest) continuam passando verdes em ~4.4s.
+
 ## [0.1.0] — 2026-10-22 — Módulo 1: Nuvem IaaS (`entrega-1-cloud`)
 
 ### Adicionado

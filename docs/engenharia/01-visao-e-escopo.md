@@ -1,23 +1,17 @@
-# 01 — Documento de Visão e Escopo do Sistema (Vision & Scope)
+# 01 - Documento de visão e escopo do sistema 
 
 | Metadado | Valor |
 | :--- | :--- |
-| **Projeto** | **VaptPDV** — Sistema Distribuído de Ponto de Venda e Gestão Operacional para Bares, Botecos e Lanchonetes |
-| **Versão** | 2.0.0 (Arquitetura PDV Core + 3 Microsserviços Satélites) |
-| **Data** | 21 de Outubro de 2026 |
-| **Instituição / Curso** | Universidade do Estado do Rio Grande do Norte (UERN) — Departamento de Ciência da Computação (DCC) |
-| **Disciplina** | Sistemas Distribuídos — 3ª Unidade (Projeto Incremental) |
-| **Docentes** | Profa. Glaucia Melissa e Profa. Luiziane Paulino dos Santos |
+| **Projeto** | **VaptPDV** |
+| **Data** | 23 de Outubro de 2026 |
 | **Autores (Equipe)** | Kaio França e Mateus Neri |
-| **Agentes BMad Responsáveis** | **Mary** (Business Analyst) & **John** (Product Manager) |
-| **Status** | Aprovado / Linha de Base (Baseline) |
 
 ---
 
 ## 1. Contexto de Negócio e Declaração do Problema
 
 ### 1.1 Cenário Atual de Pequenos Bares e Lanchonetes
-Estabelecimentos gastronômicos de pequeno e médio porte — bares, botecos, espetinhos, hamburguerias e lanchonetes com equipes de **1 a 15 colaboradores** e operação de **até 30 mesas** — operam sob alta pressão em horários de pico (happy hour, finais de semana e dias de jogos). Na grande maioria desses negócios, o controle de consumo ainda é realizado por meio de **comandas de papel**, anotações informais em cadernos ou "conta de cabeça".
+Estabelecimentos gastronômicos de pequeno e médio porte - bares, botecos, espetinhos, hamburguerias e lanchonetes com equipes de **1 a 15 colaboradores** e operação de **até 30 mesas** - soperam sob alta pressão em horários de pico (happy hour, finais de semana e dias de jogos). Na grande maioria desses negócios, o controle de consumo ainda é realizado por meio de **comandas de papel**, anotações informais em cadernos ou "conta de cabeça".
 
 Esse modelo analógico e descentralizado gera gargalos operacionais severos e perdas financeiras recorrentes:
 
@@ -28,7 +22,7 @@ Esse modelo analógico e descentralizado gera gargalos operacionais severos e pe
 5. **Lentidão e Filas no Caixa:** No momento de ir embora, o cliente enfrenta fila enquanto o caixa decifra a caligrafia do garçom, confere itens consumidos e calcula o valor total.
 6. **Ausência de Fidelização e Cegueira Gerencial:** O proprietário ou gerente encerra o expediente sem saber quais produtos trazem maior margem (Curva ABC), qual garçom teve melhor desempenho, qual o giro real do estoque ou quem são seus clientes recorrentes.
 
-### 1.2 Matriz de Problema (Framework IEEE / BMad)
+### 1.2 Matriz de Problema 
 
 | Elemento | Descrição |
 | :--- | :--- |
@@ -36,8 +30,6 @@ Esse modelo analógico e descentralizado gera gargalos operacionais severos e pe
 | **Afeta** | Proprietários/gerentes, garçons, operadores de caixa, cozinheiros/barmen e clientes de bares, botecos e lanchonetes de pequeno e médio porte |
 | **Cujo impacto é** | Perda direta de faturamento (itens não anotados ou somados incorretamente), filas no fechamento de conta, venda de produtos sem estoque, atraso na entrega de pratos/bebidas e impossibilidade de tomada de decisão baseada em dados |
 | **Uma solução de sucesso seria** | O **VaptPDV**, uma plataforma distribuída composta por um **Núcleo Operacional (PDV Core)** com interface Web/PWA responsiva e **3 Microsserviços Satélites** especializados (**KDS**, **Fidelidade/Cashback** e **Analytics/BI**), garantindo precisão decimal exata, imutabilidade histórica de vendas e alta disponibilidade no salão mesmo sob falhas parciais |
-
----
 
 ## 2. Proposta de Valor e Objetivos Estratégicos
 
