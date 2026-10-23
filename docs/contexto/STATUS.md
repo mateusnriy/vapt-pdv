@@ -3,24 +3,31 @@
 > **Propósito:** Ponto único de retomada para qualquer desenvolvedor ou agente de IA ao abrir o repositório em outra máquina ou nova sessão. Atualize este arquivo e `_bmad-output/implementation-artifacts/sprint-status.yaml` sempre que uma story mudar de estado.
 
 **Última atualização:** 2026-10-23  
-**Módulo atual:** Módulo 1 — Computação em Nuvem (`entrega-1-cloud`) — **EM FINALIZAÇÃO (`in-progress`)**  
-**Próximo Passo:** Implementação da Story 10 — Interface Web/PWA do PDV Core e homologação na AWS EC2  
-**Status do Épico 1:** Backend em camadas 100% concluído com 135 testes passando; Infraestrutura AWS EC2 provisionada pelos discentes; Story 10 (Frontend Web/PWA — Modo Garçom e Modo Caixa) planejada e pronta para desenvolvimento (`ready-for-dev`).
+**Módulo atual:** Módulo 1 — Computação em Nuvem (`entrega-1-cloud`) — **EM ANDAMENTO (`in-progress`)**  
+**Próximo Passo:** Desenvolvimento da Story 12 (Modo Garçom PWA - Salão, Comanda da Mesa e Cardápio Mobile)  
+**Status do Épico 1:** 
+- **Backend Fastify/Prisma:** 100% implementado e testado com **141 testes automatizados passando verde** (Stories 1 a 9 concluídas `done`).
+- **Frontend Web/PWA:** Em desenvolvimento ativo em `frontend/` com React 19, TypeScript, Vite, Tailwind CSS, TanStack Query e Zustand:
+  - Story 10 (Setup, Tailwind, PWA, Lucide e Componentes Atômicos): `done`
+  - Story 11 (API Client com TanStack Query e Zustand): `done`
+  - Story 12 (Modo Garçom PWA): `ready-for-dev`
+  - Story 13 (Modo Caixa e Quitação): `backlog`
+- **Infraestrutura AWS EC2:** Provisionada com sucesso pelos discentes.
 
 ---
 
 ## 1. Como retomar o trabalho em outra máquina / sessão
 
 1. Leia [`AGENTS.md`](AGENTS.md) na raiz (carregado automaticamente pelos agentes).
-2. Consulte este [`STATUS.md`](STATUS.md) e [`_bmad-output/implementation-artifacts/sprint-status.yaml`](_bmad-output/implementation-artifacts/sprint-status.yaml) para saber qual story está ativa.
-3. Para implementar o front-end agora, execute a Story 10 via `bmad-build` / `bmad-agent-dev` apontando para [`stories/10-interface-web-pwa-do-pdv-core.md`](_bmad-output/specs/spec-vapt-pdv/stories/10-interface-web-pwa-do-pdv-core.md).
+2. Consulte este [`STATUS.md`](STATUS.md) e [`_bmad-output/implementation-artifacts/sprint-status.yaml`](_bmad-output/implementation-artifacts/sprint-status.yaml) para saber o progresso da sprint.
+3. Para continuar o desenvolvimento do Frontend, inicie a Story 12 via `/bmad-build` / `/bmad-agent-dev`.
 
 ---
 
 ## 2. Divisão de Responsabilidades Registrada
 
 - **Discentes (Kaio França e Mateus Neri):** Responsáveis por toda a infraestrutura e computação distribuída prática (instância AWS EC2, Security Groups, liberação de portas, SO, PM2, subida prática dos bancos/serviços/containers e RabbitMQ, além dos vídeos de entrega e tags Git).
-- **Agente BMad (Equipe de Agentes - PM, Architect, Dev, TEA):** Responsável pelo planejamento, documentação formal de engenharia/sprint/arquitetura, especificação de UX/UI, e construção do código da aplicação VaptPDV (Fastify, Prisma, TypeScript, camadas desacopladas, interfaces, gateways, Frontend Web/PWA integrado), preparando o software de forma limpa e modular para encaixar perfeitamente em cada arquitetura dos 4 módulos da disciplina.
+- **Agente BMad (Equipe de Agentes - PM, Architect, Dev, TEA):** Responsável pelo planejamento, documentação formal de engenharia/sprint/arquitetura, especificação de UX/UI, e construção do código da aplicação VaptPDV (Fastify, Prisma, TypeScript, camadas desacopladas, interfaces, gateways, Frontend Web/PWA integrado em `frontend/`), preparando o software de forma limpa e modular para encaixar perfeitamente em cada arquitetura dos 4 módulos da disciplina.
 
 ---
 
@@ -46,7 +53,7 @@
 
 ## 4. Backlog e Progresso das Stories
 
-### Épico 1 — Módulo 1: Computação em Nuvem (`entrega-1-cloud` · Em Finalização)
+### Épico 1 — Módulo 1: Computação em Nuvem (`entrega-1-cloud` · Em Andamento)
 
 | ID (`stories.yaml`) | Chave (`sprint-status.yaml`) | Título | Status | Spec da Story |
 | :--- | :--- | :--- | :--- | :--- |
@@ -59,37 +66,40 @@
 | `"7"` | `1-7-pagamento-com-baixa-de-estoque-transacional` | Pagamento com baixa de estoque transacional | `done` | [`stories/7-pagamento-com-baixa-de-estoque-transacional.md`](_bmad-output/specs/spec-vapt-pdv/stories/7-pagamento-com-baixa-de-estoque-transacional.md) |
 | `"8"` | `1-8-deploy-em-nuvem-com-banco-gerenciado` | Deploy em nuvem com banco gerenciado (AWS EC2) | `done` | [`stories/8-deploy-em-nuvem-com-banco-gerenciado.md`](_bmad-output/specs/spec-vapt-pdv/stories/8-deploy-em-nuvem-com-banco-gerenciado.md) |
 | `"9"` | `1-9-documentacao-e-prova-de-entrega-do-modulo-1` | Documentação e prova de entrega do Módulo 1 | `done` | [`stories/9-documentacao-e-prova-de-entrega-do-modulo-1.md`](_bmad-output/specs/spec-vapt-pdv/stories/9-documentacao-e-prova-de-entrega-do-modulo-1.md) |
-| `"10"` | `1-10-interface-web-pwa-do-pdv-core` | Interface Web/PWA do PDV Core (Modo Garçom e Modo Caixa) | `ready-for-dev` | [`stories/10-interface-web-pwa-do-pdv-core.md`](_bmad-output/specs/spec-vapt-pdv/stories/10-interface-web-pwa-do-pdv-core.md) |
+| `"10"` | `1-10-setup-frontend-vite-tailwind-pwa` | Setup do Frontend React, Tailwind e PWA | `done` | [`stories/10-setup-frontend-vite-tailwind-pwa.md`](_bmad-output/specs/spec-vapt-pdv/stories/10-setup-frontend-vite-tailwind-pwa.md) |
+| `"11"` | `1-11-api-client-tanstack-query-zustand` | Camada de API REST e Estado Global (TanStack Query e Zustand) | `done` | [`stories/11-api-client-tanstack-query-zustand.md`](_bmad-output/specs/spec-vapt-pdv/stories/11-api-client-tanstack-query-zustand.md) |
+| `"12"` | `1-12-modo-garcom-pwa` | Modo Garçom PWA (Salão, Comanda da Mesa e Cardápio Mobile) | `ready-for-dev` | [`stories/12-modo-garcom-pwa.md`](_bmad-output/specs/spec-vapt-pdv/stories/12-modo-garcom-pwa.md) |
+| `"13"` | `1-13-modo-caixa-e-pagamento` | Modo Caixa / Balcão e Fechamento/Pagamento (Desktop 1440x900) | `backlog` | [`stories/13-modo-caixa-e-pagamento.md`](_bmad-output/specs/spec-vapt-pdv/stories/13-modo-caixa-e-pagamento.md) |
 
 ### Épico 2 — Módulo 2: Serviços / Microsserviços (`entrega-2-microsservicos` · Prazo: 30/10)
 
 | ID (`stories.yaml`) | Chave (`sprint-status.yaml`) | Título | Status | Spec da Story |
 | :--- | :--- | :--- | :--- | :--- |
-| `"11"` | `2-1-extrair-usuarios-service` | Extrair `usuarios-service` | `backlog` | — |
-| `"12"` | `2-2-extrair-produtos-service` | Extrair `produtos-service` | `backlog` | — |
-| `"13"` | `2-3-extrair-comandas-service-com-chamadas-http-resilientes` | Extrair `comandas-service` com chamadas HTTP resilientes | `backlog` | — |
-| `"14"` | `2-4-deploy-diagrama-e-documentacao-do-modulo-2` | Deploy, diagrama e documentação do Módulo 2 | `backlog` | — |
+| `"14"` | `2-1-extrair-usuarios-service` | Extrair `usuarios-service` | `backlog` | — |
+| `"15"` | `2-2-extrair-produtos-service` | Extrair `produtos-service` | `backlog` | — |
+| `"16"` | `2-3-extrair-comandas-service-com-chamadas-http-resilientes` | Extrair `comandas-service` com chamadas HTTP resilientes | `backlog` | — |
+| `"17"` | `2-4-deploy-diagrama-e-documentacao-do-modulo-2` | Deploy, diagrama e documentação do Módulo 2 | `backlog` | — |
 
 ### Épico 3 — Módulo 3: Containers (`entrega-3-containers` · Prazo: 06/11)
 
 | ID (`stories.yaml`) | Chave (`sprint-status.yaml`) | Título | Status | Spec da Story |
 | :--- | :--- | :--- | :--- | :--- |
-| `"15"` | `3-1-dockerfile-enxuto-por-servico` | Dockerfile enxuto por serviço | `backlog` | — |
-| `"16"` | `3-2-docker-compose-com-bancos-e-persistencia` | Docker Compose com bancos e persistência | `backlog` | — |
-| `"17"` | `3-3-documentacao-comparativa-e-prova-do-modulo-3` | Documentação comparativa e prova do Módulo 3 | `backlog` | — |
+| `"18"` | `3-1-dockerfile-enxuto-por-servico` | Dockerfile enxuto por serviço | `backlog` | — |
+| `"19"` | `3-2-docker-compose-com-bancos-e-persistencia` | Docker Compose com bancos e persistência | `backlog` | — |
+| `"20"` | `3-3-documentacao-comparativa-e-prova-do-modulo-3` | Documentação comparativa e prova do Módulo 3 | `backlog` | — |
 
 ### Épico 4 — Módulo 4: Mensageria e Streaming (`entrega-4-mensageria` · Prazo: 13/11)
 
 | ID (`stories.yaml`) | Chave (`sprint-status.yaml`) | Título | Status | Spec da Story |
 | :--- | :--- | :--- | :--- | :--- |
-| `"18"` | `4-1-rabbitmq-em-container-e-produtor-do-evento-comanda-paga` | RabbitMQ em container e produtor do evento `comanda.paga` | `backlog` | — |
-| `"19"` | `4-2-consumidor-em-produtos-service-com-baixa-idempotente` | Consumidor em `produtos-service` com baixa idempotente | `backlog` | — |
-| `"20"` | `4-3-comparativo-mensageria-vs-streaming-e-prova-do-modulo-4` | Comparativo mensageria vs. streaming e prova do Módulo 4 | `backlog` | — |
+| `"21"` | `4-1-rabbitmq-em-container-e-produtor-do-evento-comanda-paga` | RabbitMQ em container e produtor do evento `comanda.paga` | `backlog` | — |
+| `"22"` | `4-2-consumidor-em-produtos-service-com-baixa-idempotente` | Consumidor em `produtos-service` com baixa idempotente | `backlog` | — |
+| `"23"` | `4-3-comparativo-mensageria-vs-streaming-e-prova-do-modulo-4` | Comparativo mensageria vs. streaming e prova do Módulo 4 | `backlog` | — |
 
 ---
 
 ## 5. Ações Humanas (Discentes)
 
 - [x] **Infraestrutura Cloud IaaS:** Instância **AWS EC2** provisionada com Ubuntu LTS, Node.js e banco **PostgreSQL** local instalado na VM e testado com sucesso por Kaio e Mateus.
-- [ ] **Homologação Final M1:** Subir a versão com o Frontend Web/PWA (Story 10) na VM AWS EC2.
+- [ ] **Homologação Final M1:** Subir a versão com o Frontend Web/PWA completo (Stories 10 a 13) na VM AWS EC2.
 - [ ] **Gravação e Tag Git:** Gravar vídeo curto demonstrando o PDV Core funcionando na AWS EC2, publicar no YouTube (Não listado), inserir URL no `README.md` e criar a tag `entrega-1-cloud`.
