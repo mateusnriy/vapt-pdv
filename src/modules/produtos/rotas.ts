@@ -12,30 +12,12 @@ import {
   ProdutoIdParamsSchema,
   ProdutoRespostaSchema,
 } from './schemas';
-import { ProdutoEntidade, ServicoProdutos } from './servico';
+import { ServicoProdutos } from './produtos.service';
+import { ProdutosController } from './produtos.controller';
 
 export interface OpcoesRotasProdutos {
   servico: ServicoProdutos;
-}
-
-function serializarProduto(produto: ProdutoEntidade) {
-  return {
-    id: produto.id,
-    nome: produto.nome,
-    categoria: produto.categoria,
-    preco: produto.preco,
-    estoque: produto.estoque,
-    estoque_minimo: produto.estoque_minimo,
-    ativo: produto.ativo,
-    criado_em:
-      produto.criado_em instanceof Date
-        ? produto.criado_em.toISOString()
-        : String(produto.criado_em),
-    atualizado_em:
-      produto.atualizado_em instanceof Date
-        ? produto.atualizado_em.toISOString()
-        : String(produto.atualizado_em),
-  };
+  controller?: ProdutosController;
 }
 
 export const rotasProdutos: FastifyPluginAsync<OpcoesRotasProdutos> = async (
@@ -43,7 +25,7 @@ export const rotasProdutos: FastifyPluginAsync<OpcoesRotasProdutos> = async (
   opcoes,
 ) => {
   const app = fastify.withTypeProvider<TypeBoxTypeProvider>();
-  const servico = opcoes.servico;
+  const controller = opcoes.controller ?? new ProdutosController(opcoes.servico);
 
   app.post(
     '/produtos',
@@ -60,10 +42,7 @@ export const rotasProdutos: FastifyPluginAsync<OpcoesRotasProdutos> = async (
         },
       },
     },
-    async (request, reply) => {
-      const produto = await servico.criar(request.body);
-      return reply.status(201).send(serializarProduto(produto));
-    },
+    async (request, reply) => controller.criar(request, reply),
   );
 
   app.get(
@@ -71,9 +50,8 @@ export const rotasProdutos: FastifyPluginAsync<OpcoesRotasProdutos> = async (
     {
       schema: {
         tags: ['Produtos'],
-        summary: 'Listar produtos',
-        description:
-          'Lista produtos com suporte a paginação e filtros opcionais por categoria e situação ativo/inativo.',
+        summary: 'Listar produtos do catálogo',
+        description: 'Lista produtos com suporte a paginação e filtros opcionais por categoria e ativo.',
         querystring: ListarProdutosQuerySchema,
         response: {
           200: Type.Array(ProdutoRespostaSchema),
@@ -82,10 +60,7 @@ export const rotasProdutos: FastifyPluginAsync<OpcoesRotasProdutos> = async (
         },
       },
     },
-    async (request, reply) => {
-      const produtos = await servico.listar(request.query);
-      return reply.send(produtos.map(serializarProduto));
-    },
+    async (request, reply) => controller.listar(request, reply),
   );
 
   app.get(
@@ -93,8 +68,8 @@ export const rotasProdutos: FastifyPluginAsync<OpcoesRotasProdutos> = async (
     {
       schema: {
         tags: ['Produtos'],
-        summary: 'Consultar produto por ID',
-        description: 'Retorna os detalhes de um produto específico.',
+        summary: 'Obter produto por ID',
+        description: 'Retorna os detalhes completos de um produto específico.',
         params: ProdutoIdParamsSchema,
         response: {
           200: ProdutoRespostaSchema,
@@ -104,10 +79,7 @@ export const rotasProdutos: FastifyPluginAsync<OpcoesRotasProdutos> = async (
         },
       },
     },
-    async (request, reply) => {
-      const produto = await servico.buscarPorId(request.params.id);
-      return reply.send(serializarProduto(produto));
-    },
+    async (request, reply) => controller.buscarPorId(request, reply),
   );
 
   app.patch(
@@ -116,8 +88,7 @@ export const rotasProdutos: FastifyPluginAsync<OpcoesRotasProdutos> = async (
       schema: {
         tags: ['Produtos'],
         summary: 'Atualizar dados do produto',
-        description:
-          'Atualiza parcialmente campos permitidos do produto (nome, categoria, preço, estoque, estoque mínimo).',
+        description: 'Atualiza parcialmente as informações de um produto existente.',
         params: ProdutoIdParamsSchema,
         body: AtualizarProdutoBodySchema,
         response: {
@@ -128,10 +99,7 @@ export const rotasProdutos: FastifyPluginAsync<OpcoesRotasProdutos> = async (
         },
       },
     },
-    async (request, reply) => {
-      const produto = await servico.atualizar(request.params.id, request.body);
-      return reply.send(serializarProduto(produto));
-    },
+    async (request, reply) => controller.atualizar(request, reply),
   );
 
   app.post(
@@ -139,9 +107,8 @@ export const rotasProdutos: FastifyPluginAsync<OpcoesRotasProdutos> = async (
     {
       schema: {
         tags: ['Produtos'],
-        summary: 'Inativar produto',
-        description:
-          'Inativa logicamente o produto (ativo=false), impedindo novos lançamentos. Operação idempotente.',
+        summary: 'Inativar produto do cardápio',
+        description: 'Inativa um produto de forma lógica idempotente (ativo=false).',
         params: ProdutoIdParamsSchema,
         response: {
           200: ProdutoRespostaSchema,
@@ -151,10 +118,7 @@ export const rotasProdutos: FastifyPluginAsync<OpcoesRotasProdutos> = async (
         },
       },
     },
-    async (request, reply) => {
-      const produto = await servico.inativar(request.params.id);
-      return reply.send(serializarProduto(produto));
-    },
+    async (request, reply) => controller.inativar(request, reply),
   );
 
   app.get(
@@ -162,9 +126,8 @@ export const rotasProdutos: FastifyPluginAsync<OpcoesRotasProdutos> = async (
     {
       schema: {
         tags: ['Produtos'],
-        summary: 'Consultar disponibilidade do produto (Interna)',
-        description:
-          'Rota interna para validar disponibilidade de estoque e congelar dados de produto para lançamento em comanda.',
+        summary: 'Consultar disponibilidade do produto',
+        description: 'Verifica se o produto está ativo e possui quantidade em estoque suficiente.',
         params: ProdutoIdParamsSchema,
         querystring: ConsultarDisponibilidadeQuerySchema,
         response: {
@@ -175,14 +138,7 @@ export const rotasProdutos: FastifyPluginAsync<OpcoesRotasProdutos> = async (
         },
       },
     },
-    async (request, reply) => {
-      const quantidade = request.query.quantidade ?? 1;
-      const resultado = await servico.consultarDisponibilidade(
-        request.params.id,
-        quantidade,
-      );
-      return reply.send(resultado);
-    },
+    async (request, reply) => controller.consultarDisponibilidade(request, reply),
   );
 
   app.post(
@@ -190,9 +146,8 @@ export const rotasProdutos: FastifyPluginAsync<OpcoesRotasProdutos> = async (
     {
       schema: {
         tags: ['Produtos'],
-        summary: 'Baixa de estoque de comanda (Interna)',
-        description:
-          'Rota interna para realizar a dedução idempotente de estoque de itens pertencentes a uma comanda paga.',
+        summary: 'Baixar estoque de itens',
+        description: 'Efetua baixa transacional e idempotente de estoque para uma comanda quitada.',
         body: BaixaEstoqueBodySchema,
         response: {
           200: Type.Object({ status: Type.Literal('ok') }),
@@ -201,9 +156,6 @@ export const rotasProdutos: FastifyPluginAsync<OpcoesRotasProdutos> = async (
         },
       },
     },
-    async (request, reply) => {
-      await servico.baixarEstoque(request.body);
-      return reply.status(200).send({ status: 'ok' });
-    },
+    async (request, reply) => controller.baixarEstoque(request, reply),
   );
 };
