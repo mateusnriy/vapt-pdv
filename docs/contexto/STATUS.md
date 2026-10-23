@@ -4,14 +4,14 @@
 
 **Última atualização:** 2026-10-23  
 **Módulo atual:** Módulo 1 — Computação em Nuvem (`entrega-1-cloud`) — **EM ANDAMENTO (`in-progress`)**  
-**Próximo Passo:** Desenvolvimento da Story 12 (Modo Garçom PWA - Salão, Comanda da Mesa e Cardápio Mobile)  
+**Próximo Passo:** Desenvolvimento da Story 13 (Modo Caixa / Balcão e Fechamento/Pagamento)  
 **Status do Épico 1:** 
 - **Backend Fastify/Prisma:** 100% implementado e testado com **141 testes automatizados passando verde** (Stories 1 a 9 concluídas `done`).
 - **Frontend Web/PWA:** Em desenvolvimento ativo em `frontend/` com React 19, TypeScript, Vite, Tailwind CSS, TanStack Query e Zustand:
   - Story 10 (Setup, Tailwind, PWA, Lucide e Componentes Atômicos): `done`
   - Story 11 (API Client com TanStack Query e Zustand): `done`
-  - Story 12 (Modo Garçom PWA): `ready-for-dev`
-  - Story 13 (Modo Caixa e Quitação): `backlog`
+  - Story 12 (Modo Garçom PWA - Salão, Comanda da Mesa e Cardápio Mobile): `done`
+  - Story 13 (Modo Caixa e Quitação): `ready-for-dev`
 - **Infraestrutura AWS EC2:** Provisionada com sucesso pelos discentes.
 
 ---
@@ -68,8 +68,8 @@
 | `"9"` | `1-9-documentacao-e-prova-de-entrega-do-modulo-1` | Documentação e prova de entrega do Módulo 1 | `done` | [`stories/9-documentacao-e-prova-de-entrega-do-modulo-1.md`](_bmad-output/specs/spec-vapt-pdv/stories/9-documentacao-e-prova-de-entrega-do-modulo-1.md) |
 | `"10"` | `1-10-setup-frontend-vite-tailwind-pwa` | Setup do Frontend React, Tailwind e PWA | `done` | [`stories/10-setup-frontend-vite-tailwind-pwa.md`](_bmad-output/specs/spec-vapt-pdv/stories/10-setup-frontend-vite-tailwind-pwa.md) |
 | `"11"` | `1-11-api-client-tanstack-query-zustand` | Camada de API REST e Estado Global (TanStack Query e Zustand) | `done` | [`stories/11-api-client-tanstack-query-zustand.md`](_bmad-output/specs/spec-vapt-pdv/stories/11-api-client-tanstack-query-zustand.md) |
-| `"12"` | `1-12-modo-garcom-pwa` | Modo Garçom PWA (Salão, Comanda da Mesa e Cardápio Mobile) | `ready-for-dev` | [`stories/12-modo-garcom-pwa.md`](_bmad-output/specs/spec-vapt-pdv/stories/12-modo-garcom-pwa.md) |
-| `"13"` | `1-13-modo-caixa-e-pagamento` | Modo Caixa / Balcão e Fechamento/Pagamento (Desktop 1440x900) | `backlog` | [`stories/13-modo-caixa-e-pagamento.md`](_bmad-output/specs/spec-vapt-pdv/stories/13-modo-caixa-e-pagamento.md) |
+| `"12"` | `1-12-modo-garcom-pwa` | Modo Garçom PWA (Salão, Comanda da Mesa e Cardápio Mobile) | `done` | [`stories/12-modo-garcom-pwa.md`](_bmad-output/specs/spec-vapt-pdv/stories/12-modo-garcom-pwa.md) |
+| `"13"` | `1-13-modo-caixa-e-pagamento` | Modo Caixa / Balcão e Fechamento/Pagamento (Desktop 1440x900) | `ready-for-dev` | [`stories/13-modo-caixa-e-pagamento.md`](_bmad-output/specs/spec-vapt-pdv/stories/13-modo-caixa-e-pagamento.md) |
 
 ### Épico 2 — Módulo 2: Serviços / Microsserviços (`entrega-2-microsservicos` · Prazo: 30/10)
 

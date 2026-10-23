@@ -82,7 +82,11 @@ export async function buildApp(opcoes: OpcoesApp = {}): Promise<FastifyInstance>
   });
 
   // Servir arquivos estáticos do Frontend Web/PWA do PDV Core
-  const pastaPublica = fs.existsSync(path.join(__dirname, '..', 'public'))
+  // Dá prioridade aos artefatos de produção compilados do React 19 (frontend/dist/)
+  const caminhoDistFrontend = path.resolve(__dirname, '..', '..', 'frontend', 'dist');
+  const pastaPublica = fs.existsSync(caminhoDistFrontend)
+    ? caminhoDistFrontend
+    : fs.existsSync(path.join(__dirname, '..', 'public'))
     ? path.join(__dirname, '..', 'public')
     : path.join(process.cwd(), 'public');
 
