@@ -1,0 +1,37 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    color: #2B2019;
+    background-color: #FBF7F1;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background-color: #FBF7F1;
+    color: #2B2019;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Impede seleção acidental de texto durante toques rápidos no salão */
+  button, [role="button"] {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* Alvos mínimos de toque em dispositivos touch */
+  button, input, select, textarea, a {
+    touch-action: manipulation;
+  }
+}
+
+@layer utilities {
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+}
