@@ -2,14 +2,9 @@
 
 | Metadado | Valor |
 | :--- | :--- |
-| **Sistema** | **VaptPDV** — Plataforma Distribuída de Ponto de Venda, KDS, Fidelidade e Analytics para Bares, Botecos e Lanchonetes |
-| **Versão da Baseline** | `2.0.0` (Arquitetura e Engenharia de Software) |
+| **Sistema** | **VaptPDV** |
 | **Data** | 23 de Outubro de 2026 |
-| **Instituição / Curso** | Universidade do Estado do Rio Grande do Norte (UERN) — Departamento de Ciência da Computação (DCC) |
-| **Disciplina** | Sistemas Distribuídos — 3ª Unidade (Projeto Prático Incremental) |
-| **Docentes Avaliadoras** | Profa. Dra. Glaucia Melissa e Profa. Ma. Luiziane Paulino dos Santos |
 | **Autores (Discentes)** | Kaio França e Mateus Neri |
-| **Metodologia de Engenharia** | **BMad Method** + IEEE 830 / ISO 29148 / C4 Model / Kruchten 4+1 |
 
 ---
 

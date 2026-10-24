@@ -40,6 +40,10 @@ A prioridade máxima é a **velocidade, precisão e estabilidade operacional** d
 | **`success-soft`** | `#DDF0E4` | `#1D3326` | Fundo suave de badges de sucesso |
 | **`danger` (Tomate)** | `#C4391D` | `#F07A60` | Ações destrutivas, erros, itens esgotados e status *"Conta pedida"* |
 | **`danger-soft`** | `#FBE3DC` | `#3D1E17` | Fundo suave de alertas e produtos esgotados |
+| **`tint-beer`** | `#FBE6B8` | `#382A15` | Fundo pastel para categorias de cervejas e chopes |
+| **`tint-snack`** | `#E4EFD5` | `#223325` | Fundo pastel para porções e petiscos |
+| **`tint-drink`** | `#F8D9CC` | `#3D211C` | Fundo pastel para drinks e coquetéis |
+| **`tint-dessert`** | `#EBDDCB` | `#342A22` | Fundo pastel para sobremesas e cafés |
 
 ### 2.2. Tipografia e Escala
 
@@ -68,21 +72,44 @@ A prioridade máxima é a **velocidade, precisão e estabilidade operacional** d
 
 ```mermaid
 flowchart TD
+    T0["🔑 Tela 0: Login Operacional (/login)\nSeleção de Operador & Despacho por Perfil"]
+    
+    T0 -->|Perfil 'garcom'| T1["📱 Tela 1: Salão & Mesas (/garcom)"]
+    T0 -->|Perfil 'caixa'| T3["🖥️ Tela 3: Balcão & Caixa (/caixa)"]
+    T0 -->|Perfil 'cozinha'| TK["🍳 Tela KDS: Fila de Cozinha (/kds)"]
+    T0 -->|Perfil 'gerente'| T5["📊 Tela 5: Gestão & BI (/gestao)"]
+
     subgraph ModoGarcom["📱 Modo Garçom (PWA Mobile · 390x844)"]
-        T1["Tela 1: Visão do Salão & Mesas"] -->|Toque na Mesa ou + Abrir| T2["Tela 2: Comanda da Mesa & Lançamento de Itens"]
+        T1 -->|Toque na Mesa ou + Abrir| T2["Tela 2: Comanda da Mesa & Lançamento"]
         T2 -->|Enviar para a cozinha| API_LANCAR["POST /comandas/:id/itens"]
         T2 -->|Pedir a conta| API_CONTA["Atualiza status para 'Conta pedida'"]
     end
 
     subgraph ModoCaixa["🖥️ Modo Caixa / Balcão (Desktop / Tablet · 1440x900)"]
-        T3["Tela 3: Balcão Operacional / Pedido"] -->|Cobrar| T4["Tela 4: Modal de Pagamento & Quitação"]
+        T3 -->|Cobrar| T4["Tela 4: Modal de Pagamento & Quitação (Split)"]
         T4 -->|Concluir Venda| API_PAGAR["POST /comandas/:id/pagar"]
     end
 
+    subgraph ModoKDS["🍳 Modo KDS (Display Cozinha / Bar)"]
+        TK -->|Avançar Status| API_KDS["PATCH /kds/fichas/:id/status"]
+    end
+
     subgraph ModoGestao["📊 Modo Gestão & Analytics (Desktop · 1440x900)"]
-        T5["Tela 5: Dashboard de BI & Curva ABC"]
+        T5
     end
 ```
+
+### 3.0. Tela 0 — Login Operacional e Roteamento de Estação (`/login`)
+* **Dispositivo Alvo:** Adaptável (smartphones para garçons; tablets/desktops para caixa, cozinha e gerência).
+* **Estrutura Visual:**
+  * **Hero Header:** Logotipo VaptPDV em mostarda `#F2A81D`, subtítulo: *"Selecione seu perfil e operador para iniciar o turno"*.
+  * **4 Cards de Perfil de Acesso:**
+    1. **📱 Garçom (Salão PWA):** Cartão com ícone de smartphone, badge *"Mobile / PWA"*, despachando diretamente para `/garcom`.
+    2. **💻 Caixa (Balcão Operacional):** Cartão com ícone de monitor, badge *"Desktop 1440×900"*, despachando para `/caixa`.
+    3. **🍳 Cozinha (Painel KDS):** Cartão com ícone de chapéu de chef/frigideira, badge *"KDS / Fila"*, despachando para `/kds`.
+    4. **📊 Gerente (Gestão & BI):** Cartão com ícone de dashboard, badge *"Relatórios & Cardápio"*, despachando para `/gestao`.
+  * **Seletor Rápido de Colaborador:** Lista dinâmica de operadores ativos (`GET /usuarios?ativo=true`). O operador seleciona seu nome com 1 clique e entra imediatamente na estação, sem atrito de senhas no Módulo 1.
+  * **Barra de Sessão Persistente:** Em todas as telas operacionais, o avatar e nome do operador são exibidos no topo com botão *"Trocar Operador"*, retornando a `/login` a qualquer momento.
 
 ### 3.1. Tela 1 — Modo Garçom: Visão do Salão e Grade de Mesas (Mobile)
 * **Dispositivo Alvo:** Smartphones (390×844 px), uso móvel com uma única mão.
