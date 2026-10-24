@@ -31,7 +31,7 @@ export const rotasUsuarios: FastifyPluginAsync<OpcoesRotasUsuarios> = async (
       schema: {
         tags: ['Usuários'],
         summary: 'Cadastrar novo usuário',
-        description: 'Cadastra um novo usuário no sistema com perfil garcom, caixa ou gerente.',
+        description: 'Cadastra um novo usuário no sistema com perfil garcom, caixa, gerente ou cozinha.',
         body: CriarUsuarioBodySchema,
         response: {
           201: UsuarioRespostaSchema,

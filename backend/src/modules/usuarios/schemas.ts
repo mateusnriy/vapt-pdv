@@ -5,6 +5,7 @@ export const PerfilUsuarioSchema = Type.Union(
     Type.Literal('garcom'),
     Type.Literal('caixa'),
     Type.Literal('gerente'),
+    Type.Literal('cozinha'),
   ],
   { description: 'Perfil de atuação do usuário' },
 );

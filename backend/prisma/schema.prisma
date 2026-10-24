@@ -11,6 +11,7 @@ enum PerfilUsuario {
   garcom
   caixa
   gerente
+  cozinha
 }
 
 model Usuario {
