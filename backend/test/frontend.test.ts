@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { buildApp } from '../src/app';
 import { ClienteBanco } from '../src/shared/prisma';
@@ -65,24 +67,54 @@ describe('Interface Web/PWA do PDV Core (Story 10 - CAP-13)', () => {
     await app.close();
   });
 
-  it('Entrega de assets estáticos ou manifesto PWA', async () => {
+  it('GET /login, /kds e /gestao retornam 200 com o HTML da aplicação SPA', async () => {
     const app = await buildApp({ prisma: criarPrismaMock(), logger: false });
 
-    const resPwa = await app.inject({ method: 'GET', url: '/manifest.webmanifest' });
-    const resCss = await app.inject({ method: 'GET', url: '/css/style.css' });
+    for (const rota of ['/login', '/kds', '/gestao']) {
+      const resposta = await app.inject({
+        method: 'GET',
+        url: rota,
+      });
 
-    expect([resPwa.statusCode, resCss.statusCode]).toContain(200);
+      expect(resposta.statusCode).toBe(200);
+      expect(resposta.headers['content-type']).toMatch(/text\/html/);
+      expect(resposta.body).toContain('<div id="root"></div>');
+    }
 
     await app.close();
   });
 
-  it('Entrega de scripts ou ícones da aplicação client-side', async () => {
+  it('Fallback SPA: requisição GET HTML para rota SPA retorna index.html', async () => {
     const app = await buildApp({ prisma: criarPrismaMock(), logger: false });
 
-    const resIcon = await app.inject({ method: 'GET', url: '/icon-192.png' });
-    const resJs = await app.inject({ method: 'GET', url: '/js/app.js' });
+    const resposta = await app.inject({
+      method: 'GET',
+      url: '/caixa/mesa-5',
+      headers: {
+        accept: 'text/html,application/xhtml+xml',
+      },
+    });
 
-    expect([resIcon.statusCode, resJs.statusCode]).toContain(200);
+    expect(resposta.statusCode).toBe(200);
+    expect(resposta.headers['content-type']).toMatch(/text\/html/);
+    expect(resposta.body).toContain('<div id="root"></div>');
+
+    await app.close();
+  });
+
+  it('Entrega de assets estáticos da aplicação client-side', async () => {
+    const app = await buildApp({ prisma: criarPrismaMock(), logger: false });
+    const caminhoDist = path.resolve(__dirname, '..', '..', 'frontend', 'dist');
+
+    if (fs.existsSync(caminhoDist)) {
+      const resIcon = await app.inject({ method: 'GET', url: '/icon-192.png' });
+      expect(resIcon.statusCode).toBe(200);
+    } else {
+      const resCss = await app.inject({ method: 'GET', url: '/css/style.css' });
+      expect(resCss.statusCode).toBe(200);
+      const resJs = await app.inject({ method: 'GET', url: '/js/app.js' });
+      expect(resJs.statusCode).toBe(200);
+    }
 
     await app.close();
   });

@@ -90,22 +90,46 @@ export async function buildApp(opcoes: OpcoesApp = {}): Promise<FastifyInstance>
     ? path.join(__dirname, '..', 'public')
     : path.join(process.cwd(), 'public');
 
+  const temIndexHtml =
+    fs.existsSync(pastaPublica) &&
+    fs.existsSync(path.join(pastaPublica, 'index.html'));
+
   if (fs.existsSync(pastaPublica)) {
     await app.register(fastifyStatic, {
       root: pastaPublica,
       prefix: '/',
     });
 
-    app.get('/garcom', async (_request, reply) => {
-      return reply.sendFile('index.html');
-    });
-
-    app.get('/caixa', async (_request, reply) => {
-      return reply.sendFile('index.html');
-    });
+    const rotasSpa = ['/garcom', '/caixa', '/kds', '/gestao', '/login'];
+    for (const rota of rotasSpa) {
+      app.get(rota, async (_request, reply) => {
+        return reply.sendFile('index.html');
+      });
+    }
   }
 
   app.setNotFoundHandler((request, reply) => {
+    const urlLimpa = request.url.split('?')[0];
+    const isApiPrefix =
+      urlLimpa.startsWith('/produtos') ||
+      urlLimpa.startsWith('/usuarios') ||
+      urlLimpa.startsWith('/comandas') ||
+      urlLimpa.startsWith('/health') ||
+      urlLimpa.startsWith('/docs');
+
+    const aceitaHtml = (request.headers.accept || '').includes('text/html');
+    const temExtensaoArquivo = path.extname(urlLimpa).length > 0;
+
+    if (
+      request.method === 'GET' &&
+      !isApiPrefix &&
+      !temExtensaoArquivo &&
+      aceitaHtml &&
+      temIndexHtml
+    ) {
+      return reply.sendFile('index.html');
+    }
+
     return reply
       .status(404)
       .send(

@@ -6,15 +6,18 @@ import {
   Activity,
   Plus,
   CreditCard,
-  Search,
   User,
-  Coffee,
   CheckCircle2,
   AlertCircle,
-  Receipt,
   Sparkles,
   RefreshCw,
+  ChefHat,
+  BarChart3,
+  LogOut,
 } from 'lucide-react';
+import { LoginPage } from './features/auth/LoginPage';
+import { KdsPage } from './features/kds/KdsPage';
+import { GestaoPage } from './features/gestao/GestaoPage';
 import {
   Button,
   Input,
@@ -34,25 +37,23 @@ import { useComandaStore } from './stores/useComandaStore';
 import {
   useComandasAbertas,
   useAbrirComanda,
-  useFecharComanda,
 } from './hooks/useComandas';
 import { useProdutosDisponiveis } from './hooks/useProdutos';
 import { useGarconsAtivos } from './hooks/useUsuarios';
 import { ApiError } from './services/apiClient';
 import { ModoGarcomPage } from './features/garcom/ModoGarcomPage';
+import { ModoCaixaPage } from './features/caixa/ModoCaixaPage';
 
 export function App() {
-  const { setModo, nomeOperador } = useSessionStore();
+  const { modo, setModo, nomeOperador, perfilAtivo, logout } = useSessionStore();
   const {
-    comandaAtivaId,
-    incrementarItem,
     limparCarrinho,
     obterTotalItensCarrinho,
   } = useComandaStore();
 
   const totalItensCarrinho = obterTotalItensCarrinho();
 
-  const [activeTab, setActiveTab] = useState<'design' | 'garcom' | 'caixa'>('design');
+  const [activeTab, setActiveTab] = useState<'design' | 'caixa'>('design');
   const [apiHealth, setApiHealth] = useState<'checking' | 'online' | 'offline'>('checking');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [stepperVal, setStepperVal] = useState(2);
@@ -74,13 +75,6 @@ export function App() {
 
   // Mutações TanStack Query
   const abrirComandaMut = useAbrirComanda();
-  const fecharComandaMut = useFecharComanda();
-
-  // Comanda focada: selecionada pelo usuário ou a primeira aberta disponível
-  const comandaFocada =
-    comandasAbertas?.find((c) => c.id === comandaAtivaId) ||
-    (comandasAbertas && comandasAbertas[0]) ||
-    null;
 
   // Checagem de conectividade com a API Fastify via Proxy
   useEffect(() => {
@@ -126,6 +120,26 @@ export function App() {
       }
     }
   };
+
+  if (modo === 'login') {
+    return <LoginPage />;
+  }
+
+  if (modo === 'garcom') {
+    return <ModoGarcomPage apiHealth={apiHealth} />;
+  }
+
+  if (modo === 'caixa') {
+    return <ModoCaixaPage apiHealth={apiHealth} />;
+  }
+
+  if (modo === 'cozinha') {
+    return <KdsPage />;
+  }
+
+  if (modo === 'gerente') {
+    return <GestaoPage />;
+  }
 
   return (
     <div className="min-h-screen bg-bg text-text flex flex-col">
@@ -189,54 +203,76 @@ export function App() {
               )}
             </div>
 
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-border shadow-soft text-xs font-semibold">
-              <User className="w-4 h-4 text-brand-text" />
-              <span>{nomeOperador}</span>
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-border shadow-soft text-xs font-semibold">
+                <User className="w-4 h-4 text-brand-text" />
+                <span>{nomeOperador}</span>
+                {perfilAtivo && (
+                  <span className="text-[10px] uppercase font-bold px-1.5 py-0.5 rounded bg-brand-soft text-brand-text">
+                    {perfilAtivo}
+                  </span>
+                )}
+              </div>
+
+              <button
+                onClick={logout}
+                title="Trocar Operador / Ir para Login"
+                className="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-danger hover:bg-danger-soft rounded-full transition-colors border border-danger/30"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Trocar Operador</span>
+              </button>
             </div>
           </div>
         </div>
 
         {/* Tab Switcher */}
         <div className="max-w-7xl mx-auto mt-3 flex items-center justify-between border-t border-border/50 pt-2">
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setActiveTab('design')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-input text-xs font-bold transition-all min-h-[40px] ${
-                activeTab === 'design'
-                  ? 'bg-brand text-on-brand shadow-soft'
-                  : 'text-text-2 hover:bg-surface-2'
-              }`}
-            >
-              <Sparkles className="w-4 h-4" />
-              Tokens & Camada de API
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab('garcom');
-                setModo('garcom');
-              }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-input text-xs font-bold transition-all min-h-[40px] ${
-                activeTab === 'garcom'
-                  ? 'bg-brand text-on-brand shadow-soft'
-                  : 'text-text-2 hover:bg-surface-2'
-              }`}
-            >
-              <Smartphone className="w-4 h-4" />
-              Modo Garçom (PWA)
-            </button>
+          <div className="flex items-center gap-1 overflow-x-auto pb-1 sm:pb-0">
             <button
               onClick={() => {
                 setActiveTab('caixa');
                 setModo('caixa');
               }}
-              className={`flex items-center gap-2 px-4 py-2 rounded-input text-xs font-bold transition-all min-h-[40px] ${
-                activeTab === 'caixa'
+              className="flex items-center gap-2 px-3.5 py-2 rounded-input text-xs font-bold transition-all min-h-[40px] shrink-0 text-text-2 hover:bg-surface-2"
+            >
+              <Monitor className="w-4 h-4" />
+              Modo Caixa
+            </button>
+            <button
+              onClick={() => setModo('garcom')}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-input text-xs font-bold transition-all min-h-[40px] text-text-2 hover:bg-surface-2 shrink-0"
+            >
+              <Smartphone className="w-4 h-4" />
+              Modo Garçom (PWA)
+            </button>
+            <button
+              onClick={() => setModo('cozinha')}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-input text-xs font-bold transition-all min-h-[40px] text-text-2 hover:bg-surface-2 shrink-0"
+            >
+              <ChefHat className="w-4 h-4" />
+              Painel KDS
+            </button>
+            <button
+              onClick={() => setModo('gerente')}
+              className="flex items-center gap-2 px-3.5 py-2 rounded-input text-xs font-bold transition-all min-h-[40px] text-text-2 hover:bg-surface-2 shrink-0"
+            >
+              <BarChart3 className="w-4 h-4" />
+              Painel de Gestão
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab('design');
+                setModo('design');
+              }}
+              className={`flex items-center gap-2 px-3.5 py-2 rounded-input text-xs font-bold transition-all min-h-[40px] shrink-0 ${
+                modo === 'design'
                   ? 'bg-brand text-on-brand shadow-soft'
                   : 'text-text-2 hover:bg-surface-2'
               }`}
             >
-              <Monitor className="w-4 h-4" />
-              Modo Caixa / Balcão
+              <Sparkles className="w-4 h-4" />
+              Tokens & API
             </button>
           </div>
 
@@ -453,180 +489,18 @@ export function App() {
           </div>
         )}
 
-        {/* ================= ABA 2: MODO GARÇOM ================= */}
-        {activeTab === 'garcom' && (
-          <div className="animate-fadeIn">
-            <ModoGarcomPage apiHealth={apiHealth} />
-          </div>
-        )}
 
         {/* ================= ABA 3: MODO CAIXA ================= */}
         {activeTab === 'caixa' && (
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-fadeIn">
-            {/* Seção Principal: Catálogo em Grid */}
-            <div className="lg:col-span-8 space-y-4">
-              <div className="flex items-center justify-between gap-4">
-                <Input
-                  leftIcon={<Search className="w-4 h-4" />}
-                  placeholder="Buscar produto pelo código ou nome... (F2)"
-                  className="max-w-md"
-                />
-                <div className="flex gap-1.5">
-                  <Badge variant="brand">Bebidas</Badge>
-                  <Badge variant="neutral">Lanches</Badge>
-                  <Badge variant="neutral">Porções</Badge>
-                </div>
-              </div>
-
-              {/* Grid 4 Colunas com Produtos Reais */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {produtos && produtos.length > 0 ? (
-                  produtos.map((p) => (
-                    <Card
-                      key={p.id}
-                      interactive
-                      className="text-center p-3"
-                      onClick={() => incrementarItem(p.id, p.nome, p.preco)}
-                    >
-                      <Coffee className="w-6 h-6 text-brand mx-auto mb-1.5" />
-                      <span className="font-bold text-xs text-text block truncate">{p.nome}</span>
-                      <span className="font-extrabold text-sm text-text tabular-nums">
-                        {formatCurrency(p.preco)}
-                      </span>
-                    </Card>
-                  ))
-                ) : (
-                  <>
-                    <Card interactive className="text-center p-3">
-                      <Coffee className="w-6 h-6 text-brand mx-auto mb-1.5" />
-                      <span className="font-bold text-xs text-text block truncate">Chopp 500ml</span>
-                      <span className="font-extrabold text-sm text-text tabular-nums">
-                        {formatCurrency(14.0)}
-                      </span>
-                    </Card>
-                    <Card interactive className="text-center p-3">
-                      <Coffee className="w-6 h-6 text-brand mx-auto mb-1.5" />
-                      <span className="font-bold text-xs text-text block truncate">Água sem Gás</span>
-                      <span className="font-extrabold text-sm text-text tabular-nums">
-                        {formatCurrency(6.0)}
-                      </span>
-                    </Card>
-                  </>
-                )}
-              </div>
-
-              {/* Atalhos de Teclado no Rodapé */}
-              <div className="p-3 rounded-card bg-surface-2 border border-border text-xs flex flex-wrap items-center justify-between text-text-2 gap-2">
-                <span>
-                  <kbd className="bg-surface px-1.5 py-0.5 rounded border border-border font-mono font-bold text-text">
-                    F2
-                  </kbd>{' '}
-                  Buscar
-                </span>
-                <span>
-                  <kbd className="bg-surface px-1.5 py-0.5 rounded border border-border font-mono font-bold text-text">
-                    F4
-                  </kbd>{' '}
-                  Cliente CPF
-                </span>
-                <span>
-                  <kbd className="bg-surface px-1.5 py-0.5 rounded border border-border font-mono font-bold text-text">
-                    F6
-                  </kbd>{' '}
-                  Desconto
-                </span>
-                <span>
-                  <kbd className="bg-surface px-1.5 py-0.5 rounded border border-border font-mono font-bold text-text">
-                    F8
-                  </kbd>{' '}
-                  Cobrar
-                </span>
-              </div>
-            </div>
-
-            {/* Painel de Comanda Lateral Fixo (440px) */}
-            <div className="lg:col-span-4">
-              <Card elevated className="space-y-4">
-                <div className="flex items-center justify-between border-b border-border pb-3">
-                  <div>
-                    <h3 className="font-black text-lg text-text">
-                      {comandaFocada ? `Mesa ${comandaFocada.mesa}` : 'Mesa Balcão'}
-                    </h3>
-                    <span className="text-xs text-text-2">
-                      {comandaFocada
-                        ? `Comanda #${comandaFocada.id}`
-                        : 'Nenhuma comanda ativa'}
-                    </span>
-                  </div>
-                  <Badge variant="ocupada">Em aberto</Badge>
-                </div>
-
-                {/* Resumo Financeiro da Comanda */}
-                <div className="pt-2 border-t border-border space-y-1.5">
-                  <div className="flex justify-between text-xs text-text-2">
-                    <span>Subtotal</span>
-                    <span className="tabular-nums font-semibold text-text">
-                      {formatCurrency(comandaFocada?.subtotal ?? '0.00')}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-xs text-text-2 items-center">
-                    <span className="flex items-center gap-1.5">
-                      <ToggleSwitch checked={taxa10} onChange={setTaxa10} />
-                      <span>Taxa 10%</span>
-                    </span>
-                    <span className="tabular-nums font-semibold text-text">
-                      {taxa10
-                        ? comandaFocada?.taxa_servico
-                          ? formatCurrency(comandaFocada.taxa_servico)
-                          : '(calculada no fechamento)'
-                        : 'R$ 0,00'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between items-baseline pt-2 border-t border-border">
-                    <span className="text-sm font-bold text-text">Total</span>
-                    <span className="text-2xl font-black text-text tabular-nums">
-                      {formatCurrency(comandaFocada?.total ?? comandaFocada?.subtotal ?? '0.00')}
-                    </span>
-                  </div>
-                </div>
-
-                <Button
-                  variant="primary"
-                  size="action"
-                  fullWidth
-                  disabled={!comandaFocada || fecharComandaMut.isPending}
-                  leftIcon={<Receipt className="w-5 h-5" />}
-                  onClick={() => {
-                    if (comandaFocada) {
-                      fecharComandaMut.mutate(
-                        {
-                          comandaId: comandaFocada.id,
-                          dto: { aplicar_taxa_servico: taxa10 },
-                        },
-                        {
-                          onSuccess: () => {
-                            showToast(
-                              'sucesso',
-                              `Comanda #${comandaFocada.id} (Mesa ${comandaFocada.mesa}) fechada!`
-                            );
-                          },
-                          onError: (err) => {
-                            showToast(
-                              'erro',
-                              err instanceof ApiError ? err.message : 'Erro ao fechar comanda.'
-                            );
-                          },
-                        }
-                      );
-                    } else {
-                      showToast('erro', 'Nenhuma comanda aberta para fechar.');
-                    }
-                  }}
-                >
-                  {fecharComandaMut.isPending ? 'Fechando Conta...' : 'Fechar & Cobrar (F8)'}
-                </Button>
-              </Card>
-            </div>
+          <div className="rounded-card bg-surface border border-border p-8 text-center space-y-4">
+            <h2 className="text-xl font-bold text-text">Modo Caixa Completo</h2>
+            <p className="text-sm text-text-2 max-w-md mx-auto">
+              Acesse a estação do Caixa com catálogo em 4 colunas, conferência de comanda,
+              switch de taxa 10% e pagamento integrado.
+            </p>
+            <Button variant="primary" onClick={() => setModo('caixa')}>
+              Abrir Estação do Caixa (1440×900)
+            </Button>
           </div>
         )}
       </main>
