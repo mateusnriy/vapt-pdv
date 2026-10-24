@@ -20,6 +20,17 @@ export function useComandas(filtros?: ListarComandasFiltros) {
   });
 }
 
+export function useComandasSalao() {
+  return useQuery({
+    queryKey: [...COMANDAS_QUERY_KEY, 'salao'],
+    queryFn: async () => {
+      const todas = await comandasApi.listar();
+      return todas.filter((cmd) => cmd.status === 'aberta' || cmd.status === 'fechada');
+    },
+    refetchInterval: 1000 * 5, // polling a cada 5s para salão
+  });
+}
+
 export function useComandasAbertas() {
   return useQuery({
     queryKey: [...COMANDAS_QUERY_KEY, { status: 'aberta' }],

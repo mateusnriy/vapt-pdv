@@ -22,10 +22,7 @@ export const MesaCard: React.FC<MesaCardProps> = ({
   onAbrirMesa,
   onVerComanda,
 }) => {
-  const numFormatado =
-    typeof mesaNumero === 'number' && mesaNumero < 10
-      ? `0${mesaNumero}`
-      : String(mesaNumero);
+  const numFormatado = String(mesaNumero).trim().padStart(2, '0');
 
   const isContaPedida = comanda?.status === 'fechada';
   const isOcupada = comanda?.status === 'aberta';
@@ -45,7 +42,7 @@ export const MesaCard: React.FC<MesaCardProps> = ({
       onClick={handleClick}
       className={cn(
         'relative flex flex-col justify-between p-4 min-h-[140px] transition-all duration-150',
-        isLivre && 'border-dashed border-border-2 bg-surface hover:border-brand/40',
+        isLivre && 'border-dashed border-border bg-surface hover:border-brand/40',
         isOcupada &&
           'border-brand/70 bg-surface shadow-soft hover:shadow-card active:scale-[0.99]',
         isContaPedida &&

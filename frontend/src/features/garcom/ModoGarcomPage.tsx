@@ -7,13 +7,16 @@ import {
   WifiOff,
   Receipt,
   LayoutGrid,
+  ChefHat,
+  User,
+  LogOut,
 } from 'lucide-react';
 import { MesasGrid } from './components/MesasGrid';
 import { ModalAbrirMesa } from './components/ModalAbrirMesa';
 import { ComandaMesaView } from './components/ComandaMesaView';
 import { CardapioModal } from './components/CardapioModal';
 import { Badge } from '../../components/ui/Badge';
-import { useComandasAbertas } from '../../hooks/useComandas';
+import { useComandasSalao } from '../../hooks/useComandas';
 import { useGarconsAtivos } from '../../hooks/useUsuarios';
 import { useSessionStore } from '../../stores/useSessionStore';
 import { useComandaStore } from '../../stores/useComandaStore';
@@ -26,7 +29,7 @@ export interface ModoGarcomPageProps {
 export const ModoGarcomPage: React.FC<ModoGarcomPageProps> = ({
   apiHealth = 'online',
 }) => {
-  const { usuarioAtivoId, nomeOperador, setUsuarioAtivo } = useSessionStore();
+  const { usuarioAtivoId, nomeOperador, setUsuarioAtivo, logout, setModo } = useSessionStore();
   const {
     mesaAtiva,
     comandaAtivaId,
@@ -51,7 +54,7 @@ export const ModoGarcomPage: React.FC<ModoGarcomPageProps> = ({
   };
 
   // Queries TanStack Query
-  const { data: comandas = [], refetch: refetchComandas } = useComandasAbertas();
+  const { data: comandas = [], refetch: refetchComandas } = useComandasSalao();
   const { data: garcons = [] } = useGarconsAtivos();
 
   // Garante um garçom padrão se nenhum estiver selecionado
@@ -121,8 +124,8 @@ export const ModoGarcomPage: React.FC<ModoGarcomPageProps> = ({
           </div>
         </div>
 
-        {/* Indicador de Conexão com a API */}
-        <div className="flex items-center gap-1.5">
+        {/* Indicador de Conexão com a API e Troca de Operador */}
+        <div className="flex items-center gap-2">
           {apiHealth === 'online' ? (
             <Badge variant="livre" size="sm" icon={<Wifi className="w-3 h-3 text-success" />}>
               Online
@@ -132,6 +135,15 @@ export const ModoGarcomPage: React.FC<ModoGarcomPageProps> = ({
               Offline
             </Badge>
           )}
+
+          <button
+            type="button"
+            onClick={logout}
+            title="Trocar Operador"
+            className="p-1.5 rounded-full hover:bg-surface-2 text-text-2 hover:text-danger transition-colors flex items-center gap-1 text-[11px] font-bold"
+          >
+            <LogOut className="w-4 h-4 text-danger" />
+          </button>
         </div>
       </header>
 
@@ -182,20 +194,20 @@ export const ModoGarcomPage: React.FC<ModoGarcomPageProps> = ({
         </button>
       )}
 
-      {/* Barra de Navegação Inferior (Bottom Navigation) */}
+      {/* Barra de Navegação Inferior (Bottom Navigation) com 4 destinos */}
       <nav className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border shadow-modal z-20">
-        <div className="max-w-md mx-auto grid grid-cols-2">
+        <div className="max-w-md mx-auto grid grid-cols-4">
           <button
             type="button"
             onClick={() => setTelaAtiva('mesas')}
-            className={`min-h-[56px] flex flex-col items-center justify-center gap-1 text-xs font-bold transition-colors select-none ${
+            className={`min-h-[56px] flex flex-col items-center justify-center gap-1 text-[11px] font-bold transition-colors select-none ${
               telaAtiva === 'mesas'
                 ? 'text-brand-text border-t-2 border-brand bg-brand-soft/20'
                 : 'text-text-2 hover:text-text'
             }`}
           >
-            <LayoutGrid className="w-5 h-5" />
-            <span>Salão (Mesas)</span>
+            <LayoutGrid className="w-4 h-4" />
+            <span>Mesas</span>
           </button>
 
           <button
@@ -207,16 +219,32 @@ export const ModoGarcomPage: React.FC<ModoGarcomPageProps> = ({
                 showToast('erro', 'Selecione uma mesa aberta no salão para ver a comanda.');
               }
             }}
-            className={`min-h-[56px] flex flex-col items-center justify-center gap-1 text-xs font-bold transition-colors select-none ${
+            className={`min-h-[56px] flex flex-col items-center justify-center gap-1 text-[11px] font-bold transition-colors select-none ${
               telaAtiva === 'comanda'
                 ? 'text-brand-text border-t-2 border-brand bg-brand-soft/20'
                 : 'text-text-2 hover:text-text'
             }`}
           >
-            <Receipt className="w-5 h-5" />
-            <span>
-              {mesaAtiva ? `Mesa ${mesaAtiva}` : 'Comanda'}
-            </span>
+            <Receipt className="w-4 h-4" />
+            <span>{mesaAtiva ? `Mesa ${mesaAtiva}` : 'Comandas'}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setModo('cozinha')}
+            className="min-h-[56px] flex flex-col items-center justify-center gap-1 text-[11px] font-bold text-text-2 hover:text-text transition-colors select-none"
+          >
+            <ChefHat className="w-4 h-4" />
+            <span>Cozinha</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={logout}
+            className="min-h-[56px] flex flex-col items-center justify-center gap-1 text-[11px] font-bold text-text-2 hover:text-danger transition-colors select-none"
+          >
+            <User className="w-4 h-4" />
+            <span>Perfil</span>
           </button>
         </div>
       </nav>

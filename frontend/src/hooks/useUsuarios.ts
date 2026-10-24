@@ -20,6 +20,14 @@ export function useGarconsAtivos() {
   });
 }
 
+export function useUsuariosAtivos() {
+  return useQuery({
+    queryKey: [...USUARIOS_QUERY_KEY, { ativo: true }],
+    queryFn: () => usuariosApi.listar({ ativo: true }),
+    staleTime: 1000 * 60 * 2, // 2 minutos
+  });
+}
+
 export function useCriarUsuario() {
   const queryClient = useQueryClient();
 

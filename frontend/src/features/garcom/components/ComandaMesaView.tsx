@@ -245,10 +245,11 @@ export const ComandaMesaView: React.FC<ComandaMesaViewProps> = ({
             variant="primary"
             size="action"
             className={isContaPedida ? 'w-full' : 'flex-1'}
-            leftIcon={<Plus className="w-5 h-5 font-bold" />}
+            leftIcon={!isContaPedida ? <Plus className="w-5 h-5 font-bold" /> : undefined}
             onClick={onAdicionarItens}
+            disabled={isContaPedida || comanda.status !== 'aberta'}
           >
-            + Adicionar Itens
+            {isContaPedida ? 'Conta Pedida (Aguardando Pagamento)' : '+ Adicionar Itens'}
           </Button>
         </div>
       </div>

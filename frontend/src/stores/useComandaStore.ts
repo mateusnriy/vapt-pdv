@@ -17,6 +17,7 @@ interface ComandaStoreState {
   setComandaAtivaId: (id: number | null) => void;
   incrementarItem: (produtoId: number, nome: string, preco: string) => void;
   decrementarItem: (produtoId: number) => void;
+  removerItemCarrinho: (produtoId: number) => void;
   limparCarrinho: () => void;
   obterTotalItensCarrinho: () => number;
   obterItensParaLote: () => LancarItemDto[];
@@ -27,8 +28,16 @@ export const useComandaStore = create<ComandaStoreState>((set, get) => ({
   comandaAtivaId: null,
   carrinho: {},
 
-  setMesaAtiva: (mesaAtiva) => set({ mesaAtiva }),
-  setComandaAtivaId: (comandaAtivaId) => set({ comandaAtivaId }),
+  setMesaAtiva: (mesaAtiva) =>
+    set((state) => ({
+      mesaAtiva,
+      carrinho: state.mesaAtiva === mesaAtiva ? state.carrinho : {},
+    })),
+  setComandaAtivaId: (comandaAtivaId) =>
+    set((state) => ({
+      comandaAtivaId,
+      carrinho: state.comandaAtivaId === comandaAtivaId ? state.carrinho : {},
+    })),
 
   incrementarItem: (produtoId, nome, preco) =>
     set((state) => {
@@ -68,6 +77,12 @@ export const useComandaStore = create<ComandaStoreState>((set, get) => ({
           },
         },
       };
+    }),
+
+  removerItemCarrinho: (produtoId) =>
+    set((state) => {
+      const { [produtoId]: _, ...resto } = state.carrinho;
+      return { carrinho: resto };
     }),
 
   limparCarrinho: () => set({ carrinho: {} }),

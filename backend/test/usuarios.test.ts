@@ -6,7 +6,7 @@ import { ServicoUsuariosPrisma } from '../src/modules/usuarios/servico';
 interface UsuarioSimulado {
   id: number;
   nome: string;
-  perfil: 'garcom' | 'caixa' | 'gerente';
+  perfil: 'garcom' | 'caixa' | 'gerente' | 'cozinha';
   ativo: boolean;
   criado_em: Date;
   atualizado_em: Date;
@@ -21,7 +21,7 @@ function criarPrismaComUsuariosMock(usuariosIniciais: UsuarioSimulado[] = []) {
       async ({
         data,
       }: {
-        data: { nome: string; perfil: 'garcom' | 'caixa' | 'gerente'; ativo?: boolean };
+        data: { nome: string; perfil: 'garcom' | 'caixa' | 'gerente' | 'cozinha'; ativo?: boolean };
       }) => {
         const novo: UsuarioSimulado = {
           id: proximoId++,
@@ -115,6 +115,29 @@ describe('CRUD de Usuários com Perfil (Story 2 - CAP-2)', () => {
       expect(corpo.ativo).toBe(true);
       expect(corpo.criado_em).toBeDefined();
       expect(corpo.atualizado_em).toBeDefined();
+
+      await app.close();
+    });
+
+    it('Criar operador de cozinha: POST /usuarios com perfil cozinha retorna 201 com ativo=true', async () => {
+      const { prisma } = criarPrismaComUsuariosMock();
+      const app = await buildApp({ prisma, logger: false });
+
+      const resposta = await app.inject({
+        method: 'POST',
+        url: '/usuarios',
+        payload: {
+          nome: 'Seu Roberto',
+          perfil: 'cozinha',
+        },
+      });
+
+      expect(resposta.statusCode).toBe(201);
+      const corpo = resposta.json();
+      expect(corpo.id).toBe(1);
+      expect(corpo.nome).toBe('Seu Roberto');
+      expect(corpo.perfil).toBe('cozinha');
+      expect(corpo.ativo).toBe(true);
 
       await app.close();
     });

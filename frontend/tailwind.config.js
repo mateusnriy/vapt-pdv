@@ -34,6 +34,12 @@ export default {
           DEFAULT: '#C4391D',
           soft: '#FBE3DC',
         },
+        tint: {
+          beer: '#FBE6B8',
+          snack: '#E4EFD5',
+          drink: '#F8D9CC',
+          dessert: '#EBDDCB',
+        },
       },
       fontFamily: {
         sans: ['"Plus Jakarta Sans"', 'system-ui', '-apple-system', 'sans-serif'],

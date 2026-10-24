@@ -3,8 +3,8 @@ import { ArrowLeft, Search, Send, Utensils } from 'lucide-react';
 import { ProdutoStepperCard } from './ProdutoStepperCard';
 import { Input } from '../../../components/ui/Input';
 import { Button } from '../../../components/ui/Button';
-import { useProdutos } from '../../../hooks/useProdutos';
-import { useLancarItensLote } from '../../../hooks/useComandas';
+import { useProdutosDisponiveis } from '../../../hooks/useProdutos';
+import { useLancarItem } from '../../../hooks/useComandas';
 import { useComandaStore } from '../../../stores/useComandaStore';
 import { formatCurrency } from '../../../lib/utils';
 import { ApiError } from '../../../services/apiClient';
@@ -29,14 +29,14 @@ export const CardapioModal: React.FC<CardapioModalProps> = ({
   const [categoriaAtiva, setCategoriaAtiva] = useState<string>('todas');
   const [busca, setBusca] = useState('');
 
-  const { data: produtos, isLoading: isLoadingProdutos } = useProdutos();
-  const lancarItensMut = useLancarItensLote();
+  const { data: produtos, isLoading: isLoadingProdutos } = useProdutosDisponiveis();
+  const lancarItemMut = useLancarItem();
 
   const {
     carrinho,
     incrementarItem,
     decrementarItem,
-    limparCarrinho,
+    removerItemCarrinho,
     obterTotalItensCarrinho,
     obterItensParaLote,
   } = useComandaStore();
@@ -89,14 +89,18 @@ export const CardapioModal: React.FC<CardapioModalProps> = ({
       return;
     }
 
+    let enviadosComSucesso = 0;
     try {
-      await lancarItensMut.mutateAsync({
-        comandaId,
-        itens,
-      });
+      for (const item of itens) {
+        await lancarItemMut.mutateAsync({
+          comandaId,
+          dto: item,
+        });
+        removerItemCarrinho(item.produto_id);
+        enviadosComSucesso++;
+      }
 
-      limparCarrinho();
-      onSucessoEnvio(itens.length);
+      onSucessoEnvio(enviadosComSucesso);
       onClose();
     } catch (err) {
       let msg = 'Erro ao enviar itens para a cozinha.';
@@ -220,10 +224,10 @@ export const CardapioModal: React.FC<CardapioModalProps> = ({
             className="flex-1 h-[54px] min-h-[50px] text-sm font-black shadow-card active:scale-[0.98]"
             leftIcon={<Send className="w-5 h-5 font-bold" />}
             onClick={handleEnviarLote}
-            isLoading={lancarItensMut.isPending}
-            disabled={totalItensLote === 0 || lancarItensMut.isPending}
+            isLoading={lancarItemMut.isPending}
+            disabled={totalItensLote === 0 || lancarItemMut.isPending}
           >
-            {lancarItensMut.isPending ? 'Enviando Pedido...' : 'Enviar para a Cozinha'}
+            {lancarItemMut.isPending ? 'Enviando Pedido...' : 'Enviar para a Cozinha'}
           </Button>
         </div>
       </div>

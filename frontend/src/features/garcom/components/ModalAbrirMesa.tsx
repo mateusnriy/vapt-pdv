@@ -40,18 +40,15 @@ export const ModalAbrirMesa: React.FC<ModalAbrirMesaProps> = ({
   }, [mesaPredefinida]);
 
   useEffect(() => {
-    if (garcomPadraoId) {
-      setGarcomId(garcomPadraoId);
-    } else if (garcons && garcons.length > 0 && !garcomId) {
-      setGarcomId(garcons[0].id);
-    }
-  }, [garcomPadraoId, garcons, garcomId]);
-
-  useEffect(() => {
     if (isOpen) {
       setErroLocal(null);
+      if (garcomPadraoId) {
+        setGarcomId(garcomPadraoId);
+      } else if (garcons && garcons.length > 0) {
+        setGarcomId(garcons[0].id);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, garcomPadraoId, garcons]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

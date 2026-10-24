@@ -1,4 +1,4 @@
-export type PerfilUsuario = 'garcom' | 'caixa' | 'gerente';
+export type PerfilUsuario = 'garcom' | 'caixa' | 'gerente' | 'cozinha';
 
 export interface Usuario {
   id: number;
