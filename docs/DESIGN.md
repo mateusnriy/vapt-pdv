@@ -1,20 +1,29 @@
 # DESIGN.md — VaptPDV
 
-Sistema de PDV, KDS e gestão para restaurantes, lanchonetes e bares (multi-segmento, configurável por estabelecimento). Este documento é a fonte única de verdade visual: use exatamente estes tokens, formas e regras.
+Sistema de PDV, KDS e gestão para restaurantes, lanchonetes e bares (multi-segmento, configurável por estabelecimento). Este documento é a fonte única de verdade visual, funcional e de conteúdo: use exatamente estes tokens, formas, fluxos e regras.
 
-**Como ler.** As seções 1 a 10 são o contrato visual (a numeração é citada pelas specs de tela: §2.3 mapa de status, §3 tipografia KDS, §8.2 camadas de feedback). A seção 11 traz o `tokens.css` pronto para copiar. As seções 12 a 14 cobrem ícones, responsividade, impressão e o que está dentro ou fora da v1.
-**Precedência.** Em conflito, vale nesta ordem: spec da tela (`docs/design/*.md`) > catálogo de componentes (`docs/design/04-componentes.md`) > arquitetura do frontend (`docs/design/01-arquitetura-frontend.md`) > este documento. Quando a spec cita um token, ele existe aqui com o mesmo nome.
+**Como ler.** As seções 1 a 5 são o contrato visual puro (cor, tipografia, forma, espaço). A seção 6 é o **catálogo de componentes**: peças reutilizáveis, nunca telas completas. A seção 7 é o **inventário de telas**: toda tela real do produto, com ID, propósito e layout. A seção 8 traz os fluxos ponta a ponta. As seções 9–11 cobrem estados, acessibilidade e conteúdo. A seção 12 tem o `tokens.css` pronto para copiar. As seções 13–16 cobrem ícones, responsividade, impressão e o que está dentro ou fora da v1.
+**Precedência.** Em conflito, vale nesta ordem: spec da tela (`telas/*.md`) > este documento > bom senso. Quando a spec cita um token, ele existe aqui com o mesmo nome.
+
+### Telas vs. componentes — a distinção que este documento mantém sempre
+
+Dois tipos de conteúdo aparecem lado a lado neste arquivo e no canvas de protótipos, e cada um tem uma regra de leitura diferente:
+
+- **Tela (screen).** Um estado completo e navegável do produto, com ID formal (`G01`, `C07`, `K02`, `M05`, `X03`...), tamanho de viewport fixo e lugar definido no mapa de navegação (§7 e §8). Uma tela é o que o usuário realmente vê ao abrir o app numa etapa do trabalho dele. Toda tela é construída **compondo componentes do §6** — uma tela nunca introduz um estilo novo que não exista no catálogo.
+- **Componente (component).** Uma peça de interface reutilizável — botão, pill, card de mesa, ticket do KDS, campo, modal — documentada uma vez no §6, com todos os seus estados (padrão, hover, foco, pressionado, desabilitado, carregando, erro). Um componente **não é uma tela**: ele não tem ID de navegação, não aparece sozinho no mapa do produto e seu propósito é ser citado por várias telas diferentes. Quando a spec de uma tela diz "usa `StatusPill`" ou "usa `Stepper`", ela está apontando para a definição única no §6, não redefinindo o componente ali.
+
+Regra prática: se você está descrevendo "o que a pessoa vê quando abre X", é tela (vai para §7). Se está descrevendo "como esse botão/card/campo se comporta em qualquer lugar que ele apareça", é componente (vai para §6). Nenhuma informação de comportamento de componente deve ser duplicada dentro do inventário de telas — o inventário só diz **quais** componentes a tela usa e **como eles se organizam no layout**.
 
 ## 1. Direção
 
 - **Personalidade:** acolhedora, rápida, confiável. Visual limpo, cantos arredondados, cores de alimentos (mostarda, café, creme, manjericão, tomate).
-- **Assinatura visual (o que torna o VaptPDV reconhecível):** (1) o **tile tintado** de produto, um quadrado arredondado com a cor da categoria e um ícone linear; (2) a **faixa lateral de estado** (10 px no ticket do KDS, 4 px em "Minha mesa", 6 px no toast), sempre acompanhada de texto; (3) a **mostarda só em ação**: se algo é mostarda, dá para tocar ou está selecionado. O resto fica quieto, em creme, café e branco.
+- **Assinatura visual (o que torna o VaptPDV reconhecível):** (1) o **tile tintado** de produto, um quadrado arredondado com a cor da categoria e um ícone linear; (2) a **faixa lateral de estado** (10 px no ticket do KDS, 4 px em "Minha mesa", 6 px no toast); (3) a **mostarda só em ação**: se algo é mostarda, dá para tocar ou está selecionado. O resto fica quieto, em creme, café e branco.
 - **Proibido:** emojis, cores neon, gradientes decorativos, sombras pesadas, ícones coloridos aleatórios, cartão dentro de cartão, ícone sozinho em ação ambígua.
 - **Prioridade:** velocidade e clareza na operação (pico de movimento) acima de ornamento. Poucos toques por venda (meta do Garçom: lançar um item em até 3 toques), layout estável, sem saltos de conteúdo.
 - **Temas:** claro e escuro em todos os módulos, com modo Automático. KDS abre em escuro por padrão (leitura à distância); perfil `cozinha` entra em escuro mesmo com tema global claro.
 - **Idioma:** pt-BR. Moeda `R$ 1.234,56`, datas `24/10/2026`, hora 24 h (`19:42`).
-- **Usuários e contexto** (premissas que guiam as decisões): garçom em pé, uma mão, celular 360–430 px, pressa, luz variável; caixa em balcão, mouse, teclado e toque, turnos longos; cozinha a 2–3 m de uma TV, mãos sujas, pouco ou nenhum toque; gerente em desktop analisando o dia. Sem senha de operador na v1 (login por escolha de pessoa).
-- **Escopo da v1** (as telas só prometem o que existe): sem fila offline de vendas, sem NFC-e, sem desconto, sem transferência de mesa, sem impressora real, sem foto de produto, sem resgate de cashback. Ver §14.
+- **Usuários e contexto:** garçom em pé, uma mão, celular 360–430 px, pressa, luz variável; caixa em balcão, mouse, teclado e toque, turnos longos; cozinha a 2–3 m de uma TV, mãos sujas, pouco ou nenhum toque; gerente em desktop analisando o dia. Sem senha de operador na v1 (login por escolha de pessoa).
+- **Escopo da v1** (as telas só prometem o que existe): sem fila offline de vendas, sem NFC-e, sem desconto, sem transferência de mesa, sem impressora real, sem foto de produto, sem resgate de cashback. Ver §16.
 
 ## 2. Cores (tokens semânticos)
 
@@ -69,29 +78,29 @@ Sistema de PDV, KDS e gestão para restaurantes, lanchonetes e bares (multi-segm
 
 ### 2.3 Mapa de status (rótulos oficiais)
 
-Toda pill de status é `StatusPill` (H 26–28, pill, 13/700, ícone opcional de 14 px) com texto sempre visível.
+Toda pill de status é o componente `StatusPill` (§6.3) com texto sempre visível.
 
 | Domínio | Valor da API | Rótulo | Fundo / texto | Ícone |
 |---|---|---|---|---|
 | Mesa | sem comanda | Livre | success-soft / success-text | `circle-check` |
-| Mesa | `aberta` | Ocupada | brand-soft / brand-text | `utensils` |
+| Mesa | `aberta` | Aberta | brand-soft / brand-text | `utensils` |
 | Mesa | `fechada` ou conta pedida | Conta pedida | danger-soft / danger-text (+ borda 2 px `danger` no card) | `receipt` |
-| Mesa | `garcom_id` = operador | Minha (pill secundária fora do filtro Minhas; marcador `brand-edge` de 4 px) | brand-soft / brand-text | `user` |
+| Mesa | `garcom_id` = operador | Minha (marcador `brand-edge` de 4 px na lateral do card, além da pill de status normal) | — | `user` |
 | Comanda | `aberta` | Aberta | brand-soft / brand-text | `clock` |
 | Comanda | `fechada` | Aguardando pagamento | danger-soft / danger-text | `receipt` |
 | Comanda | `paga` | Paga | success-soft / success-text | `circle-check` |
 | Comanda | `cancelada` | Cancelada | surface-2 / text-2 | `circle-x` |
-| Ficha | `recebido` | Aguardando | surface-2 / text-2 | `hourglass` |
-| Ficha | `em_preparo` | Em preparo | brand-soft / brand-text | `flame` |
-| Ficha | `pronto` | Pronto | success-soft / success-text | `bell` |
+| Ficha | `recebido` | Aguardando / Na fila | surface-2 / text-2 | `hourglass` |
+| Ficha | `em_preparo` | Em preparo / Preparando | brand-soft / brand-text | `flame` |
+| Ficha | `pronto` | Pronto | success-soft / success-text | `bell` / `circle-check` |
 | Ficha | `entregue` | Entregue | surface-2 / text-2 | `check` |
 | Ficha | `cancelado` | Cancelado | surface-2 / text-2, nome riscado | `circle-x` |
-| SLA do ticket | dentro / atenção / atraso | `mm:ss` · `mm:ss · Atenção` · `mm:ss · Atrasado` | success / brand / danger (soft + text) | — |
-| Sistema | sincronizado / degradado / sem conexão | ● Sincronizado (● Online no KDS) · ▲ Parcial · ✕ Sem conexão | success / brand / danger (soft + text) | — |
+| SLA do ticket | dentro / atenção / atraso | `mm:ss` · `mm:ss · Atenção` · `mm:ss · Atrasado` | success / brand / danger (soft + text) | `clock` / `hourglass` / `alert-triangle` |
+| Sistema | sincronizado / degradado / sem conexão | Conectado · Reconectando · Sem conexão | success / brand / danger (soft + text) | `circle-check` / `refresh-cw` / `wifi-off` |
 | Estoque | 0 | Esgotado | danger-soft / danger-text | — |
-| Estoque | abaixo do mínimo | Estoque baixo | brand-soft / brand-text | `triangle-alert` |
+| Estoque | abaixo do mínimo | Baixo | danger-soft / danger-text | `triangle-alert` |
 | Cadastro | `ativo=false` | Inativo | surface-2 / text-2 | — |
-| Login | último operador | Último acesso | brand-soft / brand-text | — |
+| Login | último operador | Último acesso | — (card com borda de seleção `brand-edge`) | — |
 
 ### 2.4 Contrastes verificados (WCAG 2.2 AA)
 
@@ -116,223 +125,293 @@ Calculados com a fórmula de luminância relativa; todos passam nos dois temas.
 
 ### 2.5 Tiles por categoria
 
-O tile do produto tem a tint da categoria e o ícone `lucide` em `text-2` (contraste do ícone sobre a tint ≥ 5:1 nos dois temas). Categoria desconhecida cicla as quatro tints pelo hash do nome. No Tailwind (`frontend/tailwind.config.js`), os tokens semânticos possuem aliases mapeados diretamente:
+O tile do produto tem a tint da categoria e o ícone linear em `text-2` (contraste do ícone sobre a tint ≥ 5:1 nos dois temas). Categoria desconhecida cicla as quatro tints pelo hash do nome. Este é um **componente** (`ProductTile`, §6.3), não um tipo de tela.
 
-| Categoria | Token Semântico | Alias no Tailwind | Hex Claro / Escuro | Ícone |
-|---|---|---|---|---|
-| Lanches | tint-1 mostarda | `tint-beer` | #FBE6B8 / #4A3815 | `sandwich` |
-| Porções | tint-2 manjericão | `tint-snack` | #E4EFD5 / #27382A | `drumstick` |
-| Sobremesas | tint-3 tomate | `tint-drink` | #F8D9CC / #4A2A20 | `ice-cream-cone` |
-| Bebidas | tint-4 cappuccino | `tint-dessert` | #EBDDCB / #3A2E25 | `cup-soda` |
-| Combos | tint-1 mostarda | `tint-beer` | #FBE6B8 / #4A3815 | `package` |
-| Outras | por hash | — | por hash | `utensils` |
+| Categoria | Tint | Ícone |
+|---|---|---|
+| Lanches | tint-1 mostarda | `sandwich` |
+| Porções | tint-2 manjericão | `drumstick` |
+| Sobremesas | tint-3 tomate | `ice-cream-cone` |
+| Bebidas | tint-4 cappuccino | `cup-soda` |
+| Combos | tint-1 mostarda | `package` |
+| Outras | por hash | `utensils` |
 
 ## 3. Tipografia
 
-- Família: **Plus Jakarta Sans** (400–800), `woff2` local; fallback `system-ui`. Números com `font-variant-numeric: tabular-nums` em preços, tabelas, relógios e cronômetros.
-- **Escala base (px/peso):** `fs-kpi` 30–32/800 · `fs-title` 24–26/800 · `fs-section` 16–18/700–800 · `fs-body` 14–15/600 · `fs-body-sm` 14/700 · `fs-caption` 13/600–700 · `fs-micro` 12/700 (mínimo absoluto).
-- Altura de linha: 1,45 no corpo, 1,15 em títulos e números grandes. Nenhum rótulo de botão quebra linha (`white-space: nowrap`).
-- Quando o texto é longo, limite a 70 caracteres por linha (ajudas, avisos, ReceiptView é exceção por ser cupom).
-- **Tokens de uso recorrente:** número da mesa 38/800 · total do pedido 30/800 · título de modal 20/800 · rótulo de campo 13/700 · ajuda e erro 13/600 · preço de card 16/800 · nome de produto 15/700 · navegação 13/700 (rail e bottom) e 15/700 (sidebar) · valor do MoneyInput no pagamento 24/800 · troco 30/800.
-- **KDS (leitura a 2–3 m), tokens `--fs-kds-*`:**
+- Família: **Plus Jakarta Sans** (500–800), `woff2`/Google Fonts; fallback `system-ui`. Números com `font-variant-numeric: tabular-nums` em preços, tabelas, relógios e cronômetros.
+- **Escala base (px/peso):** `fs-kpi` 30–38/800 · `fs-title` 24–26/800 · `fs-section` 16–20/700–800 · `fs-body` 14–15/600–700 · `fs-caption` 13/600–700 · `fs-micro` 12/700 (mínimo absoluto).
+- Altura de linha: 1,4 no corpo, 1,15–1,2 em títulos e números grandes. Nenhum rótulo de botão quebra linha (`white-space: nowrap`).
+- Quando o texto é longo, limite a 70 caracteres por linha (ajudas, avisos; o recibo é exceção por ser cupom).
+- **Tokens de uso recorrente:** número da mesa 24–38/800 (depende da densidade da grade) · total do pedido 26–38/800 · título de modal 20/800 · rótulo de campo 13/700 · ajuda e erro 13/600 · preço de card 14–16/700–800 · nome de produto 14–15/700 · navegação 13/700 (rail e bottom) e 15/700 (sidebar) · valor do campo de dinheiro no pagamento 24–32/800 · troco 26–30/800.
+- **KDS (leitura a 2–3 m):**
 
 | Token | Px/peso | Onde |
 |---|---|---|
-| `--fs-kds-place` | 36/800 | local do pedido ("Mesa 6", "Balcão 27") |
-| `--fs-kds-order` | 22/700 | "Pedido 0481" |
+| `--fs-kds-place` | 40/800 | local do pedido ("Mesa 6", "Balcão 0483") |
 | `--fs-kds-qty` | 32/800 | "2×" (coluna fixa de 72 px) |
 | `--fs-kds-item` | 30/700 | nome do item |
-| `--fs-kds-note` | 22/700 | observação (`brand-text`), nunca abaixo de 22 mesmo na escala compacta |
-| `--fs-kds-allergy` | 24/800 | bloco de alergia (`danger-text`) |
+| `--fs-kds-note` | 22/700 | observação (`brand-text`) |
+| `--fs-kds-allergy` | 28/800 | bloco de alergia (`danger-text`, fundo `danger-soft`) |
 | `--fs-kds-button` | 26/800 | botão do ticket (72 px) |
-| `--fs-kds-timer` | 26/800 | cronômetro em pill |
-| `--fs-kds-column` | 30/800 | título da coluna |
-| `--fs-kds-clock` | 44/800 | relógio do cabeçalho |
+| `--fs-kds-timer` | 22–24/800 | cronômetro em pill |
+| `--fs-kds-header` | 32/800 | título do cabeçalho ("Cozinha e bar") |
+| `--fs-kds-clock` | 32/800 | relógio do cabeçalho |
 
-  A escala compacta (`--kds-scale: .85`, a partir de 5 tickets na coluna) e o "Tamanho do texto: Grande" (×1,15) multiplicam estes valores. Abaixo de 1280 px de largura, as fontes escalam com `clamp()` e as 3 colunas permanecem.
-- **Rótulos de botão:** verbo + objeto ("Enviar para a cozinha", "Cobrar", "Concluir venda"). Sem caixa-alta corrida; frases em *sentence case*.
+  A escala compacta (a partir de 5 tickets na coluna) reduz estes valores proporcionalmente. Abaixo de 1280 px de largura as fontes escalam, e as colunas permanecem.
+- **Rótulos de botão:** verbo + objeto ("Enviar ao preparo", "Cobrar", "Confirmar e avisar o caixa"). Sem caixa-alta corrida; frases em *sentence case*.
 
 ## 4. Forma, espaço, elevação, movimento
 
 ### 4.1 Raios
 | Token | Valor | Uso |
 |---|---|---|
-| `--radius-xs` | 6 | `kbd`, barras de gráfico (topo) |
-| `--radius-control` | 14 | botões md/lg, campos, linhas, toasts, banners, tiles de produto |
-| `--radius-card` | 20 | cards de produto, produto em lista, tiles de pagamento |
-| `--radius-card-lg` | 24 | mesa, ticket, KPI, modal, QrPanel |
+| `--radius-xs` | 6 | `kbd`, barras de gráfico (topo), ícone de badge interno |
+| `--radius-control` | 14 | botões md/lg, campos, linhas de lista, toasts, banners, tiles de produto, chips (quando não são pill) |
+| `--radius-card` | 20 | cards de produto, item de lista em card, modal pequeno |
+| `--radius-card-lg` | 24 | mesa, ticket do KDS, cardl (painéis grandes), modal médio |
 | `--radius-btn-lg` | 18 | botões xl, xxl e KDS |
 | `--radius-sheet` | 28 | topo do bottom sheet |
-| `--radius-pill` | 999 | chips, pills, switch, FAB, avatar |
+| `--radius-pill` | 999 | chips, pills, switch, FAB, avatar, segmented control |
 
 Uma lógica só: o raio cresce com o tamanho do elemento. Não misturar raios dentro de um mesmo componente.
 
 ### 4.2 Espaço
-Múltiplos de 4: 4, 8, 12, 16, 24, 32, 48. Margem lateral do celular 16; gap de grade 12 (mesas) e 16 (produtos); padding de card 16–24; margem e gap do KDS 48 e 32.
+Múltiplos de 4: 4, 8, 12, 16, 24, 32, 48. Margem lateral do celular 16–20; gap de grade 12 (mesas) e 16 (produtos/cards de gestão); padding de card 12–24; margem e gap do KDS 32–40.
 
 ### 4.3 Elevação
-Borda de 1 px + sombra muito leve. `--shadow-1`: `0 1px 2px rgba(43,32,25,.06)`. `--shadow-float` (FAB e popover): `0 6px 16px rgba(43,32,25,.16)`. Modal, drawer e sheet usam `surface-raised` + scrim, sem sombra extra. No escuro, sem sombra: a elevação vem do tom (`surface` < `surface-raised`).
+Borda de 1 px + sombra muito leve. `--shadow-1`: `0 1px 2px rgba(43,32,25,.06)`. `--shadow-float` (FAB, modal, drawer, sheet, toast): `0 6px 16px rgba(43,32,25,.16)`. No escuro, sem sombra: a elevação vem do tom (`surface` < `surface-raised`).
 
 ### 4.4 Movimento
-- Só para feedback: `--dur-fast` 100 ms (pulse do card ao tocar, press), `--dur-base` 160 ms (troca de coluna, entrada de ticket), `--dur-slow` 240 ms (modal: fade + `translateY` 8 px; drawer: slide). Entrada com `--ease-out`, saída com `--ease-in`.
-- Anime só `transform` e `opacity`. Skeleton com *shimmer* de 1,2 s.
-- Um único movimento espontâneo permitido: a borda do KDS pulsa **uma vez** (3 s, sem piscar acima de 3 Hz) quando chega ticket novo.
+- Só para feedback: rápido (~100 ms) para toque/press, base (~160 ms) para troca de coluna e entrada de ticket, lento (~240 ms) para modal (fade + leve deslocamento vertical) e drawer (slide lateral).
+- Anime só `transform` e `opacity`. Skeleton com *shimmer* suave.
+- Um único movimento espontâneo permitido: a borda do ticket do KDS pulsa **uma vez** quando chega um pedido novo (sem piscar acima de 3 Hz).
 - `prefers-reduced-motion: reduce` remove shimmer, pulse e deslizes; fica só a troca de estado.
 
 ### 4.5 Camadas (z-index)
-`--z-sticky` 10 · `--z-nav` 20 · `--z-fab` 30 · `--z-drawer` 40 · `--z-modal` 50 · `--z-toast` 60.
+Ordem crescente: conteúdo normal → elemento fixo (barra inferior, rodapé fixo) → FAB → scrim/drawer → modal → toast (sempre no topo de tudo).
 
 ### 4.6 Alvos e alturas
-Alvo mínimo 44×44 (celular e caixa touch); KDS 56 (cabeçalho e ajustes) e 72 (botão do ticket). Altura de botão: md 44 · lg 52 · xl 60 (Enviar para a cozinha) · xxl 68 (Cobrar) · kds 72. Campo 52 (desktop 48). Chip 44. Linha de tabela 56 (compacta 44).
+Alvo mínimo 44×44 (celular e caixa touch); KDS 56–72. Altura de botão: md 44 · lg 52 · xl 60 · xxl 68 (ex.: "Cobrar") · kds 72. Campo 48–52. Chip 44. Linha de tabela 56 (compacta 44).
 
-## 5. Componentes
+## 5. Princípios de interação (regras transversais a todos os componentes)
 
-Medidas e estados completos estão em `04-componentes.md`; aqui ficam as regras visuais que não podem variar. Todo controle tem 6 estados: padrão, hover (só ponteiro fino), foco, pressionado, desabilitado, carregando (`aria-busy`).
+Todo controle interativo tem até 6 estados possíveis, nem todos aplicáveis a todo componente: **padrão, hover** (só com ponteiro fino, nunca a única pista), **foco** (anel visível sempre), **pressionado, desabilitado** (com o motivo escrito, nunca silencioso) **e carregando** (`aria-busy`, rótulo mantido, sem mudar de largura).
 
-- **Botão:** `primary` (brand, on-brand, 800; um por região), `secondary` (borda `border-strong`, fundo surface), `tertiary` (texto), `destructive` (texto `danger-text`, leva a confirmação ou Desfazer), `destructive-solid` (danger/on-danger, só dentro de diálogo), `success-outline` (KDS "Marcar como entregue"). **Desabilitado:** `surface-2` com texto `text-2` e o **motivo escrito dentro do botão** (13/600): "Faltam R$ 84,98", "Adicione itens", "Sem conexão". Carregando: spinner de 20 px à esquerda, rótulo mantido, largura intacta.
-- **Chip/aba:** pill 44 px; ativo = brand (categorias) ou `text` invertido (filtros neutros), inativo = surface + `border-strong`; contador opcional em pill interna. Rolagem horizontal com *fade* de 24 px e setas em ≥ 600 px.
-- **StatusPill:** ver §2.3.
-- **Card de produto (Caixa):** tile 96×96 tintado com ícone de 40 px, nome 15/700 (2 linhas), preço 16/800. Em pedido: borda 2 px `brand-edge` + selo "×2" (brand-soft). Esgotado: opacidade .55 + pill "Esgotado", `aria-disabled`, não clicável.
-- **Linha de produto (Garçom):** tile 56×56, nome 15/700, preço 14/600 `text-2`; sem quantidade = botão `+` 44; com quantidade = Stepper, borda 2 px `brand-edge` na linha e botão de observação visível.
-- **Stepper:** `[−] n [+]`, largura fixa 128 px, fundo surface-2 (brand-soft quando selecionado). `−` em 1 vira lixeira e remove o item.
-- **Switch:** 44×26, `role="switch"`, ligado = success com polegar `surface` (5,0:1), desligado = surface-2 + `border-strong`. Rótulo à esquerda.
-- **Campos:** rótulo sempre visível acima (13/700), borda `border-strong`, foco = borda 2 px `focus`, erro = borda `danger` + ícone `circle-alert` + texto `danger-text`. MoneyInput com prefixo "R$" e máscara pt-BR; CPF/CNPJ com máscara e validação no *blur*.
-- **Mesa (card):** número 38/800, pill de status, tempo aberto, total parcial "Estimado". Livre = borda tracejada `border-strong`; Ocupada = borda `border`; **Conta pedida = borda 2 px `danger` + pill com texto**; Minha = faixa esquerda 4 px `brand-edge`.
-- **Ticket KDS:** `surface`, `radius-card-lg`, padding 24, **faixa esquerda 10 px** (success | brand | danger) com `TimerPill` ("18:05 · Atrasado"); quantidade e item grandes; observação em `brand-text`; **alergia em bloco próprio** (`danger-soft`, ícone `shield-alert`, texto 24/800) sempre acima da observação normal e nunca truncada; um botão de 72 px por ticket.
-- **KPI:** rótulo 13/700 `text-2`, valor 30/800, variação com sinal e texto ("+8% em relação a ontem"). Verde para positivo e vermelho para negativo só quando o sentido faz sentido para o indicador. Indisponível: "—" + "Indisponível. {motivo}".
-- **Gráficos:** barras em mostarda com contorno `chart-bar-stroke` de 1,5 px; valor acima da barra; eixos começam em zero; pico com contorno 2 px `text` e legenda "Pico às 20h · 36 pedidos"; `role="img"` + `aria-label` + tabela `sr-only`. HBarList: rótulo à esquerda, percentual à direita, trilho de 8 px.
-- **Modal / Drawer / Sheet:** `surface-raised`, `radius-card-lg` (sheet: 28 no topo). Modal sm 480 / md 640; drawer 480 (560 em formulários longos); sheet com até 85% da altura, botão "Fechar" visível e rodapé que sobe com o teclado. Foco inicial no primeiro campo ou no botão **seguro**.
-- **ConfirmDialog:** título em forma de pergunta com o objeto ("Cancelar o pedido 0482?"), consequência em 1–2 frases, botão seguro "Voltar" (foco inicial) + destrutivo com a ação nomeada. Nunca "Sim/Não" nem "OK".
-- **Navegação:** BottomNav 64 px + safe area (4 destinos; ativo = pill brand-soft atrás do ícone + `aria-current`); RailNav 88 px; SideNav 248 px; TopBar 80 px; FAB 56 px com "Abrir mesa" em uma linha.
-- **Banner e toast:** ver §8.2.
-- **Tabela (DataTable):** `<table>` semântica, cabeçalho sticky em surface-2, sem zebra, linha clicável com foco. Abaixo de 1024 px vira lista de cards.
-- **Recibo (ReceiptView):** papel de 360 px na tela, fonte tabular; impressão preto sobre branco em 80 mm. Rodapé fixo: "Comprovante de consumo. Não é documento fiscal."
+- **Desabilitado sempre explica por quê**: um botão apagado sem texto é uma UX quebrada. Ex.: "Cobrar · Faltam R$ 84,98", "Enviar ao preparo · sem conexão", "Transferir mesa · disponível em breve".
+- **Nunca "Sim/Não" ou "OK"** em diálogos — o rótulo do botão sempre nomeia a ação ("Cancelar comanda", "Manter comanda").
+- **Preferir Desfazer a confirmar**: ações reversíveis (remover item, avançar ficha do KDS) usam uma janela curta de desfazer; ações irreversíveis ou de alto impacto (cancelar comanda, remover pagamento, inativar produto) pedem confirmação explícita (§8.6).
+- **Toda cor de estado vem acompanhada de texto ou ícone** — nunca só cor.
 
-## 6. Módulos e telas
+## 6. Catálogo de componentes
 
-Shells e medidas por módulo. Cada tela citada tem seu ID (G01, C07, K02…) na spec correspondente.
+> Esta seção documenta **peças reutilizáveis**, não telas. Nenhum componente aqui tem ID de navegação nem aparece sozinho no mapa do produto (§7); cada um é citado por várias telas diferentes, que combinam componentes para formar um layout completo. Quando um nome aparece em negrito pela primeira vez, é o nome oficial do componente — use-o nas specs de tela em vez de redescrever o comportamento.
 
-### 6.0 Transversais (todos os módulos)
-- **Login (X01):** "Quem está operando agora?", grade de cartões de operador (160×176 no desktop, linhas de 72 no celular) agrupados por perfil (Garçons, Caixa, Gerência, Cozinha e bar), "Último acesso" primeiro. Sem senha, sem confirmação. Rodapé com status, tema e versão.
-- **Status do sistema (X03):** pill no cabeçalho + banner de detalhe (§8.2).
-- **Erros de rota (X06):** 404, sem permissão (nunca redireciona em silêncio) e erro inesperado ("A tela travou, mas suas vendas continuam salvas no servidor"), sempre com ação primária.
-- **PWA (X08):** instalar em faixa discreta e atualizar em toast persistente; nunca recarrega sozinho com rascunho aberto.
+### 6.1 Botões e ações
 
-### 6.1 Caixa (desktop, mouse/teclado/touch, 1440×900; mínimo 1024)
-- **Shell:** RailNav de 88 px (nav café) com ícone + rótulo: Venda, Mesas, Pedidos, Caixa (= Receber), Ajustes. TopBar de 80 px: busca (F2, só em Venda e Pedidos), pill de status, pill "Impressora cozinha — Não conectada" (placeholder), operador (Avatar + nome + "Caixa 01"). ShortcutFooter com `kbd`.
-- **Venda:** chips de categoria + grade de 4 colunas (3 entre 1024 e 1279) de cards de produto. Painel direito de 440 px: "Pedido 0482", local, botão Cliente (F4), linhas com colunas fixas `[1fr | 128 | 96]`, aviso de cozinha, Subtotal (estimado), **Gorjeta 10% (switch ligado por padrão)**, Total 30/800, Desconto (desabilitado com motivo), Mais ▾ e **Cobrar** (68 px, valor à direita, F8).
-- **Mesas, Pedidos, Receber:** grade de 6 colunas de mesas (versão larga de 132 px); tabela com filtros na URL; duas seções em Receber ("Contas pedidas — fechar" e "Aguardando pagamento"), mais antigo primeiro, "Atrasado" acima de 5 min.
-- **Detalhe da comanda:** drawer 480/560 com itens, totais (estimado ou final), pendências da cozinha (nunca bloqueiam) e ações por status.
-- **Pagamento (C07):** 3 colunas. Resumo ≈ 380 px com "já pago / falta pagar" + ProgressBar e pagamentos lançados; centro com as formas (Pix, Crédito, Débito, Dinheiro, Vale-refeição), valor a cobrar editável, divisão (igual, por item, por pessoa) e painel da forma (QR Pix com cronômetro de 5:00, troco em 30/800 `success-text`, cartão na maquininha); coluna fiscal com CPF/CNPJ opcional, "Emitir NFC-e" ligado e desabilitado com explicação e "Imprimir via do cliente". **Concluir venda** só habilita com saldo zero e mostra "Faltam R$ …" enquanto isso.
-- **Venda concluída (C12):** `circle-check` de 64 px, total 32/800, fidelidade (valores vindos do serviço, nunca calculados na tela), "Nova venda" como primário, recibo à direita.
-- **Atalhos:** F2 buscar · F4 cliente/CPF · F6 desconto (indisponível) · F7 nota (indisponível) · F8 cobrar · `?` ajuda · 1–5 forma de pagamento · Ctrl+Enter concluir.
-- **Densidade:** Padrão ou Compacta (reduz cards e linhas, alvos continuam ≥ 44).
+- **Botão primário** (`.btn`): fundo mostarda, texto `on-brand`, peso 800; um por região de tela (nunca dois botões primários competindo na mesma área visível).
+- **Botão secundário** (`.btn.s`): fundo `surface`, borda `border-strong`, texto `text`. Para a ação alternativa ao lado do primário ("Cancelar", "Voltar").
+- **Botão terciário** (`.btn.t`): só texto, sem fundo nem borda. Para ações de baixo compromisso dentro de um toast ou card ("Desfazer", "Ver").
+- **Botão destrutivo** (`.btn.d`): texto `danger-text`, fundo `surface`, borda `border-strong`. Usado fora de diálogo, quando a ação ainda não é definitiva (ex.: "Excluir produto" num formulário, que abre confirmação).
+- **Botão destrutivo sólido** (`.btn.ds`): fundo `danger`, texto `on-danger`. Só dentro de `ConfirmDialog`, nunca solto numa tela.
+- **Botão de sucesso contornado** (`.btn.so`): fundo `success-soft`, borda 2 px `success`, texto `success-text`. Para confirmar uma entrega ou conclusão sem ser o CTA principal da tela (ex.: "Marcar como entregue" no KDS).
+- **Botão desabilitado** (`.btn.dis`): fundo `surface-2`, texto `text-2`, ícone de cadeado opcional, e sempre uma segunda linha pequena com o motivo.
+- **Tamanhos:** md (44) padrão em listas e formulários · lg (52) em cards e modais · xl (60) no CTA principal de uma tela de celular ("Enviar ao preparo") · xxl (68) no CTA mais crítico de um fluxo de dinheiro ("Cobrar", "Continuar para pagamento") · kds (72) exclusivo dos tickets do painel de cozinha.
+- **Botão de ícone** (`.ib`): quadrado 44×44 arredondado, com ou sem contorno/fundo suave. Para ações auxiliares de cabeçalho (voltar, fechar, mais opções) — sempre com `aria-label` quando não tem texto visível.
+- **FAB** (botão de ação flutuante): pill flutuante no canto inferior direito do celular, só para a ação mais frequente da tela ("+ Abrir mesa"). Nunca mais de um por tela.
 
-### 6.2 Garçom (celular 390×844, uso com uma mão; mínimo 360)
-- **Shell:** cabeçalho de contexto ("Sábado · jantar" + pill + Avatar), conteúdo rolável, BottomNav de 4 destinos (Mesas, Comandas, Cozinha, Perfil) com badge de prontos. Sem gesto obrigatório; toda ação tem botão visível. Safe areas respeitadas.
-- **Salão:** título "Salão", chips (Todas, Minhas, Livres, Conta pedida) com contagem, grade de 2 colunas (gap 12), FAB "Abrir mesa" na zona do polegar (`bottom: 76px + safe-area`, `padding-bottom` de 88 na lista).
-- **Abrir mesa:** sheet com NumPad (teclas de 64), nome do cliente opcional e botão xl "Abrir mesa".
-- **Comanda:** voltar + mesa + pessoas + tempo; card "N itens enviados" (abre o sheet de itens); categorias que **filtram** a lista; linhas com stepper; rodapé fixo com "N novos itens" + total estimado, **Enviar para a cozinha** (60 px) e "Pedir a conta" (48 px). Comanda fechada, paga ou cancelada abre em modo leitura com faixa explicativa.
-- **Itens enviados:** sheet agrupado por status de preparo, ajuste de quantidade e remoção com Desfazer de 5 s; item pronto traz "Marcar como entregue".
-- **Cozinha:** lista "Prontos para entregar" (mais antigo primeiro, pill "Pronto há 3 min"), "Em preparo" recolhido, chips de setor. Aviso de pronto = toast persistente + badge + vibração curta (sem som por padrão).
-- **Perfil:** Avatar 72, trocar operador, tema, resumo do turno (contagens), instalar app, serviços, Sair.
+### 6.2 Seleção, filtro e navegação de conteúdo
 
-### 6.3 KDS (TV/monitor 1920×1080, pouco ou nenhum toque)
-- **Tema escuro por padrão**, `data-surface="kds"`, anel de foco de **4 px**, alvos de 56 a 72 px.
-- **Cabeçalho (88 px):** logo "V" 56, título dinâmico (Cozinha, Bar ou Cozinha e bar), chips de setor **Todas · Cozinha · Bar** (56 px; teclas 1/2/3), pill "● Online", Ajustes e relógio 44/800. As estações Chapa, Fritadeira e Montagem ficam fora da v1.
-- **Colunas:** Novos → Em preparo → Prontos, larguras iguais, margem 48 e gap 32, mais antigo no topo. Tickets do mesmo pedido e status formam um ticket; estados diferentes geram um ticket por coluna. Com 5 ou mais tickets: escala compacta + chip "+N abaixo".
-- **SLA:** Novos e Em preparo contam desde `criado_em` (atenção em 10 min, atraso em 15); Prontos contam a espera de retirada (atenção em 3 min, atraso em 6). Configurável nos Ajustes. Cronômetros continuam contando sem conexão.
-- **Botões:** Novos "Iniciar preparo" (primary, imediato) · Em preparo "Marcar como pronto" (primary, Desfazer 5 s) · Prontos "Marcar como entregue" (success-outline, Desfazer 5 s). Durante a janela o botão vira "Desfazer (5)" e o ticket fica com opacidade .75.
-- **Teclado e bump bar:** setas navegam, Enter avança, Esc desfaz, 1/2/3 filtra, `,` abre Ajustes. Foco com anel de 4 px e `outline-offset` 4 px em volta do card.
-- **Ticket cancelado:** fica 15 s com faixa `danger-soft` "Pedido cancelado" e botão "Dispensar".
+- **Chip/aba** (`.chip`): pill de 44 px; ativo = fundo mostarda (categorias) ou café (filtros neutros sobre fundo escuro), inativo = `surface` + `border-strong`; contador numérico opcional em pill interna (`.ct`). Linha de chips rola horizontalmente.
+- **Segmented control** (`.seg`): grupo de opções mutuamente exclusivas dentro de uma pill de fundo `surface-2`, com a opção ativa destacada em `surface` + borda. Usado para alternar período (Hoje/7 dias/30 dias), tema (Claro/Escuro/Sistema) ou modo de visão.
+- **Radio** (`.rad`): círculo de seleção única, usado em listas de escolha (motivo de cancelamento, forma de pagamento, perfil de usuário).
+- **Checkbox** (`.cb`): quadrado de seleção múltipla.
+- **Switch** (`.sw`): trilho de 44×26, `role="switch"`; ligado = fundo `success` com polegar claro, desligado = `surface-2` + `border-strong`. Rótulo sempre à esquerda, nunca só o controle sozinho.
+- **Stepper** (`.stp`): `[−] n [+]` em largura fixa, fundo `surface-2` (ou `brand-soft` quando o item está selecionado/no pedido). O `−` em 1 vira ação de remover.
 
-### 6.4 Gestão e BI (desktop 1440×900)
-- **Shell:** SideNav de 248 px (logo + "VaptPDV" com "PDV" em mostarda): Visão geral, Cardápio, Estoque, Vendas, Equipe, Fiscal. Rodapé com operador, tema e estado dos serviços.
-- **Visão geral:** período (Hoje / 7 dias / 30 dias) em SegmentedControl, 4 KPIs, pedidos por hora (BarChart), meios de pagamento (HBarList), mais vendidos (RankTable) e "Precisa de atenção" (AlertItem: esgotado, estoque baixo, vendas pendentes). Cada card tem skeleton e ErrorState próprio: um serviço de relatórios fora do ar não derruba a tela.
-- **Cardápio e Estoque:** tabela com filtros, drawer de produto (formulário em coluna única, "Descartar alterações?" se sujo), modal de reposição que avisa quando o estoque mudou ("O estoque mudou para X. Revise o valor.").
-- **Vendas:** quatro abas (Comandas, Faturamento, Curva ABC, Garçons) com filtros de período e exportação CSV. Percentuais vêm prontos do serviço, nunca recalculados.
-- **Equipe:** lista com perfis e inativação confirmada. **Fiscal:** placeholder honesto ("Emissão fiscal indisponível nesta versão").
-- Especificação detalhada das telas M01–M15 em `docs/design/40-gestao.md`.
+### 6.3 Exibição de conteúdo
 
-## 7. Estados obrigatórios (todas as telas)
+- **StatusPill**: pill de 26–44 px com ícone opcional + texto, nas cores do trio semântico (ver mapa completo em §2.3). É o único componente autorizado a comunicar status — nunca pintar um card inteiro para indicar estado sem também ter uma StatusPill.
+- **ProductTile**: quadrado tintado pela categoria (ver §2.5) com ícone linear central. Tamanhos: 40–56 (lista/linha), 96–100% da largura da célula (grade de produtos no Caixa).
+- **Avatar** (`.av`): círculo com iniciais, cor `brand-soft`/`brand-text`. Tamanhos 32 (compacto em cabeçalho), 44 (padrão), 56–72 (destaque em perfil/login).
+- **Card genérico** (`.card`/`.cardl`): contêiner de superfície com borda sutil e raio padrão; a unidade básica de agrupamento visual em todo o produto (produto, item de pedido, linha de configuração, KPI).
+- **Mesa (card)** (`.mesa`): número grande, pill de status, pessoas/tempo/valor quando ocupada. Livre = borda tracejada; Ocupada = borda sólida sutil; **Conta pedida = borda 2 px `danger`** (classe dedicada, nunca reaproveitar uma classe de texto auxiliar para essa borda); Minha = faixa lateral 4 px `brand-edge` adicional.
+- **Ticket do KDS** (`.tk`): card grande de cozinha com faixa lateral de 10 px (cor de SLA), local do pedido em fonte gigante, lista de itens com quantidade, observação, bloco de alergia destacado (quando houver) e um botão de 72 px.
+- **KPI** (`.kpi`/card de métrica): rótulo pequeno em `text-2`, valor grande 30–38/800, variação opcional com StatusPill de tendência.
+- **Gráfico de barras**: barras mostarda com contorno `chart-bar-stroke`; a barra de maior valor (pico) ganha contorno reforçado. Sem eixo decorado, rótulos diretos.
+- **HBarList**: lista com rótulo à esquerda, trilho horizontal preenchido e valor/percentual à direita — usado em "mais vendidos" e "por forma de pagamento".
+- **Tabela** (`.tb`): cabeçalho em `surface-2`, linhas com altura fixa, sem zebra, coluna numérica alinhada à direita. Em telas estreitas vira lista de cards.
+- **Recibo/comprovante** (`.paper`): bloco de papel simulado, fundo branco fixo mesmo no tema escuro, fonte tabular, usado só na tela de venda concluída e na impressão.
+- **QR** (`.qr`): grade de módulos preto sobre branco fixo (também no escuro), para pagamento Pix.
+- **`kbd`**: tecla de atalho de teclado, só no módulo Caixa.
+- **Skeleton** (`.sk`): placeholder cinza com a mesma forma e contagem do conteúdo final, nunca um spinner genérico cobrindo a tela inteira.
+
+### 6.4 Campos e formulários
+
+- **Campo de texto** (`.inp`): rótulo sempre visível acima, borda `border-strong`; foco = borda 2 px `focus`; erro = borda `danger` + ícone + texto `danger-text` abaixo do campo (`.erm`).
+- **Campo de dinheiro** (`.inp.mny`): alinhado à direita, prefixo "R$", fonte tabular grande nos fluxos de pagamento.
+- **Área de texto** (`.ta`): para observações e descrições longas.
+- **Textarea + chips de sugestão**: combinação usada em observação de item (ex.: "Sem cebola", "Bem passado") — os chips preenchem o texto, não o substituem.
+
+### 6.5 Camadas de sobreposição
+
+- **Modal** (`.modal`): centralizado, com scrim por trás; tamanhos pequeno (confirmações, ~480) e médio (formulários curtos, ~640). Foco preso dentro, `Esc` fecha, foco volta ao gatilho ao fechar.
+- **Drawer** (`.drawer`): painel lateral direito, para detalhe de registro sem sair do contexto da lista (detalhe de comanda, cliente e fidelidade, novo usuário).
+- **Sheet** (`.sheet`): painel que sobe do rodapé no celular, substitui o modal em telas estreitas.
+- **ConfirmDialog**: um modal pequeno com título em forma de pergunta nomeando o objeto, 1–2 frases de consequência, botão seguro (foco inicial, nunca o destrutivo) e botão destrutivo nomeado com o verbo da ação.
+- **Toast**: faixa flutuante com faixa lateral de 6 px da cor semântica, ícone + texto + ação opcional ("Desfazer", "Ver"), empilhável.
+- **Banner**: faixa de largura total, abaixo do cabeçalho, para um estado persistente que precisa de atenção mas não bloqueia a tela (reconectando, impressora indisponível, conexão restabelecida).
+- **Faixa inline de erro**: texto + ícone junto ao campo que falhou.
+
+### 6.6 Navegação de módulo
+
+- **BottomNav** (`.bnav`): barra inferior fixa de 4 destinos no celular (Garçom), com badge numérico opcional sobre um ícone (ex.: itens prontos aguardando).
+- **RailNav** (`.rail`): coluna estreita de ícones no Caixa.
+- **SideNav** (`.side`): coluna larga com rótulos de texto na Gestão.
+- **TopBar** (`.top`): cabeçalho horizontal com título da tela, busca, pill de conexão e avatar do operador (Caixa e Gestão).
+
+## 7. Inventário de telas
+
+Toda tela listada aqui tem ID formal, propósito de uma linha e tamanho de viewport fixo. "Composição" lista os componentes do §6 que a tela combina — não repete a definição deles. IDs sem tela publicada hoje (M04, M08) não existem no mapa de navegação atual; não assuma funcionalidade a partir do número ausente.
+
+### 7.0 Transversais (todos os módulos) — viewport variável conforme o contexto
+
+| ID | Tela | Propósito | Composição principal |
+|---|---|---|---|
+| X01 (desktop) | Login operacional | Escolher "quem está operando" sem senha | Cards de operador agrupados por perfil, StatusPill de conexão, botão de tema |
+| X01 (celular) | Login operacional (Garçom) | Mesma escolha, em coluna única e retrato | Lista de cards de operador, "Último acesso" em destaque |
+| X02 | Trocar operador | Trocar quem está logado sem sair do app | Modal com lista de radios por pessoa, aviso de que comandas abertas continuam com quem as abriu |
+| X03/X04 | Status de conexão · Toasts | Referência visual dos estados de conexão e dos toasts de resultado de ação | StatusPill, banners por severidade, toasts de sucesso/atenção/erro |
+| X05 | Confirmações | Referência dos três padrões de ConfirmDialog (destrutivo, de atenção, neutro) | ConfirmDialog em 3 variações lado a lado |
+| X06 | Telas de erro | Sem conexão, sem permissão, não encontrado, erro inesperado | 4 estados de erro de página inteira, cada um com ação de recuperação |
+| X07 | Estados de lista | Referência de carregando, vazio, sem resultado, erro e "recurso fora da v1" | Skeleton, EmptyState, ErrorState, botão desabilitado com motivo |
+| X08/X09 | Instalar app (PWA) · Tema | Instalar o PWA, atualizar versão, escolher tema claro/escuro | Card de instalação, toast persistente de atualização, SegmentedControl de tema com pré-visualização |
+
+### 7.1 Garçom (celular 390×844, retrato, uma mão)
+
+| ID | Tela | Propósito | Composição principal |
+|---|---|---|---|
+| G01 | Salão | Ver todas as mesas e seu estado para decidir a próxima ação | Chips de filtro com contagem, grade 2 colunas de cards de Mesa, FAB "Abrir mesa", BottomNav |
+| G02 | Abrir mesa | Registrar quantas pessoas sentaram e abrir a comanda | Sheet com contador de pessoas, campo de nome opcional, botão xl |
+| G03 | Comanda | Montar o pedido de uma mesa aberta | Busca, chips de categoria, lista de produtos com Stepper, rodapé fixo com total e "Enviar ao preparo" |
+| G04 | Observação e alergia | Anotar um pedido especial ou alergia num item | Sheet com textarea, chips de sugestão, switch de alergia com campo próprio |
+| G05 | Itens enviados | Acompanhar o status de preparo dos itens já enviados | Abas Enviados/Novos, cards com StatusPill de ficha, rodapé com total e "Pedir a conta" |
+| G06 | Pedir a conta | Revisar o pedido final e avisar o caixa | Resumo de itens e totais, switch de gorjeta, aviso de bloqueio, CTA xl |
+| G07 | Comandas | Ver todas as comandas sob responsabilidade do garçom (ou de todos) | Segmented "Minhas/Todas", lista de cards de comanda com StatusPill |
+| G08 | Cozinha | Ver o progresso de preparo dos próprios pedidos | Chips de filtro por status, cards de ficha com ProgressBar, botão "Marcar como entregue" |
+| G09 | Perfil | Configurações pessoais e fim de turno | Avatar grande, SegmentedControl de tema, switches de notificação/conexão, "Trocar operador", "Sair do turno" |
+| G10 | Aviso de item pronto | Notificar, sobre o Salão, que um item ficou pronto | Toast persistente com borda reforçada, sobreposto ao G01 |
+| G11 | Conta aguardando | Mostrar que a conta foi pedida e a comanda está travada para novos itens | StatusPill "Conta pedida", resumo somente leitura, CTA desabilitado com motivo |
+
+### 7.2 Caixa (desktop 1440×900, mouse/teclado/touch; mínimo 1024)
+
+| ID | Tela | Propósito | Composição principal |
+|---|---|---|---|
+| C01 | Venda | Montar um pedido (mesa ou balcão) a partir do cardápio | RailNav, TopBar com busca, grade de ProductTile por categoria, painel de pedido com Stepper e total, CTA "Cobrar" |
+| C02 | Mesas | Visão geral de todas as mesas, versão larga da grade do Garçom | Chips de filtro com contagem, grade de cards de Mesa (6 colunas) |
+| C03 | Pedidos | Listar e filtrar todos os pedidos do período | Chips de status, tabela com busca por número/mesa |
+| C04 | Receber | Fila de contas que precisam ser fechadas e recebidas | Banner de "conta pedida", cards de destaque para contas urgentes, lista de recebidos no dia |
+| C05 | Detalhe da comanda | Ver e agir sobre uma comanda específica sem sair da lista | Drawer com itens, StatusPill de ficha por item, totais, ações (cancelar, adicionar itens, fechar conta) |
+| C06 | Fechar conta | Revisar itens, decidir gorjeta/divisão/cliente e escolher forma de pagamento | Lista de itens, switches de gorjeta e divisão, seleção de forma de pagamento (radio), CTA xxl |
+| C07 | Pagamento (dinheiro) | Registrar valores recebidos em dinheiro até fechar o saldo | ProgressBar com "falta pagar", campo de dinheiro com teclado numérico próprio, chips de valores sugeridos, cálculo de troco |
+| C10 | Pagamento (Pix) | Mostrar o QR e aguardar a confirmação do pagamento | QR, StatusPill "Aguardando pagamento" com cronômetro, botão de copiar código |
+| C11 | Dividir a conta | Dividir o total entre pessoas ou por item e receber de cada uma | SegmentedControl por pessoa/por item, contador de pessoas, lista de parcelas com status individual |
+| C12 | Venda concluída | Confirmar que o pagamento foi recebido e oferecer próxima ação | Ícone de sucesso grande, total, ações "Nova venda"/"Imprimir", recibo (`.paper`) ao lado |
+| C13 | Cancelar comanda | Confirmar o cancelamento de uma comanda com itens já enviados | ConfirmDialog com aviso de itens em preparo, seleção de motivo (radio) |
+| C14 | Cliente e fidelidade | Vincular um cliente cadastrado à venda em andamento | Drawer com busca de cliente, card de nível de fidelidade com ProgressBar, cadastro rápido |
+| C15 | Observação e alergia | Mesma função do G04, adaptada ao layout de modal do desktop | Modal com textarea, chips de sugestão, switch de alergia |
+| C16 | Ajustes do Caixa | Preferências do turno e do terminal | Card de operador, tema, gorjeta sugerida, aviso sonoro, placeholder de impressora |
+| C17 | Atalhos | Referência dos atalhos de teclado disponíveis no módulo | Modal com lista de `kbd` por categoria (navegação, venda) |
+
+### 7.3 KDS (TV/monitor 1920×1080, tema escuro, pouco ou nenhum toque)
+
+| ID | Tela | Propósito | Composição principal |
+|---|---|---|---|
+| K01 | Painel de cozinha e bar | Visão principal de todos os tickets ativos | Cabeçalho com SegmentedControl de estação e relógio, grade de tickets (`.tk`) com faixa de SLA |
+| K02 | Tickets e SLA | Referência visual das três faixas de tempo e da anatomia de um ticket | 3 tickets lado a lado (dentro do prazo, atenção, atrasado), legenda de cada faixa |
+| K03 | Ajustes do KDS | Configurar estação visível, tema e limites de tempo do SLA | Drawer com SegmentedControl de estação/tema, switch de som, campos de limite de SLA |
+| K04 | Estados do KDS | Referência de fila vazia, sem conexão e carregando | EmptyState, banner de erro/sucesso, skeleton em escala de ticket |
+
+### 7.4 Gestão e BI (desktop 1440×900)
+
+| ID | Tela | Propósito | Composição principal |
+|---|---|---|---|
+| M01 | Visão geral | Resumo do dia para decisão rápida do gerente | SegmentedControl de período, 4 KPIs, gráfico de barras por hora, HBarList de mais vendidos |
+| M02 | Cardápio | Listar e gerenciar os produtos à venda | Chips de categoria com contagem, tabela com switch "no cardápio" por linha |
+| M03 | Produto | Criar/editar um produto do cardápio | Formulário em coluna (nome, descrição, categoria, estação, preço, código), painel lateral de visual e disponibilidade |
+| M05 | Estoque | Acompanhar níveis de insumos e identificar faltas | Banner de itens abaixo do mínimo, tabela com barra de nível e StatusPill |
+| M06 | Repor estoque | Registrar uma entrada de insumo | Modal com Stepper de quantidade, campo de observação, cálculo do novo saldo |
+| M07 | Vendas · Comandas | Listar todas as comandas do período com detalhe de pagamento | KPIs de resumo, tabela completa com forma de pagamento e status |
+| M09 | Faturamento | Evolução do faturamento e sua composição por forma de pagamento | KPIs, gráfico de barras por dia, HBarList por forma de pagamento |
+| M10 | Curva ABC | Classificar produtos por participação no faturamento | Cards de resumo por classe (A/B/C), tabela ordenada com participação acumulada |
+| M11 | Desempenho de garçons | Comparar resultado de cada garçom no período | Cards de destaque por garçom (medalha de posição), tabela com ticket médio e tempo de mesa |
+| M12 | Equipe | Gerenciar os usuários do sistema | Chips de filtro por perfil, tabela com switch de usuário ativo |
+| M13 | Usuário | Criar/editar um usuário e seu perfil de acesso | Drawer com campo de nome, seleção de perfil (radio com descrição), PIN, switch ativo |
+| M14 | Fiscal | Mostrar os dados fiscais do estabelecimento e o que está fora da v1 | Banner explicando a ausência de NFC-e, campos somente leitura, ações desabilitadas com motivo |
+| M15 | Exportar dados | Gerar um arquivo de dados de um período | Modal com seleção do conjunto de dados (radio), intervalo de datas, formato (CSV/XLSX) |
+
+**Observação sobre numeração:** os IDs M04 e M08 não correspondem a telas publicadas; não foram atribuídos neste ciclo porque o documento de origem `telas/40-gestao.md` com a especificação completa de M01–M15 ainda não foi fornecido ao design. As 14 telas acima foram inferidas do mapa de telas (`02-mapa-de-telas-e-fluxos.md`), do catálogo de componentes (`04-componentes.md`) e da §7.4 anterior deste documento — revise quando a spec completa chegar.
+
+## 8. Fluxos ponta a ponta
+
+Sequências reais de telas, para já nascerem coerentes com a navegação.
+
+### 8.1 Garçom — atender uma mesa
+`G01 Salão` → toca mesa livre → `G02 Abrir mesa` (pessoas, nome opcional) → `G03 Comanda` (monta o pedido, pode abrir `G04 Observação` por item) → "Enviar ao preparo" → `G05 Itens enviados` (acompanha status; recebe `G10 Aviso de item pronto` quando algo fica pronto) → cliente pede a conta → `G06 Pedir a conta` → confirma → `G11 Conta aguardando` (travada, só o caixa resolve) até o caixa fechar o pagamento.
+
+### 8.2 Caixa — receber uma conta
+`C04 Receber` (ou `C02 Mesas`/`C03 Pedidos`) → abre a comanda → `C05 Detalhe da comanda` → "Fechar conta" → `C06 Fechar conta` (gorjeta, divisão opcional em `C11`, cliente opcional em `C14`) → escolhe forma de pagamento → `C07 Pagamento (dinheiro)` ou `C10 Pagamento (Pix)` → saldo chega a zero → `C12 Venda concluída`.
+
+### 8.3 Caixa — cancelar uma comanda
+A partir de `C05 Detalhe da comanda` ou de `C02/C03`: "Cancelar" → `C13 Cancelar comanda` (motivo obrigatório, aviso se há itens já em preparo) → confirma → comanda sai da lista ativa.
+
+### 8.4 Cozinha/bar — ciclo de um ticket
+Pedido enviado do Garçom ou Caixa aparece em `K01 Painel` na coluna de novos → equipe toca "Iniciar preparo" → ticket move para em preparo (cor de SLA conforme tempo, ver `K02`) → "Marcar como pronto" → coluna de prontos, Garçom recebe `G10` → equipe ou garçom confirma entrega → ticket sai do painel.
+
+### 8.5 Gestão — investigar uma queda de estoque
+`M01 Visão geral` (alerta "precisa de atenção") → `M05 Estoque` (item abaixo do mínimo) → `M06 Repor estoque` → confirma → volta para `M05` com saldo atualizado.
+
+### 8.6 Quando confirmar em vez de desfazer
+Pedem `ConfirmDialog` (não há como desfazer com um toque, ou o efeito é alto): cancelar comanda (`C13`), remover pagamento já lançado, cancelar cobrança Pix, sair do pagamento com valores lançados, inativar produto ou usuário, descartar alterações de formulário, pedir a conta (`G06`), limpar um rascunho de pedido. Preferem **Desfazer** (janela curta): remover item do pedido, avançar/recuar uma ficha do KDS.
+
+## 9. Estados obrigatórios (todas as telas)
 
 | Estado | Regra visual |
 |---|---|
-| Carregando | skeleton com **a mesma quantidade e dimensões** do conteúdo final (mesas 8, produtos 12, linhas 8, KPIs 4) e `aria-busy` |
-| Vazio (nada ainda) | ícone linear 40 px, título curto, ação seguinte ("Toque em Abrir mesa") |
-| Vazio (filtro) | "Nenhum … com esses filtros" + "Limpar filtros" |
-| Erro | ErrorState com "Tentar de novo" e detalhe recolhido com `requestId` |
-| Sucesso | toast discreto de 3–4 s; marcos (pagamento) ganham tela própria |
-| Sem conexão | cache com carimbo ("Mostrando dados de 19:42"), banner, botões de gravação desabilitados com o motivo "Sem conexão". **Não há fila de vendas na v1** |
-| Degradado | pill "▲ Parcial" + banner; o fluxo crítico nunca é bloqueado |
-| Item esgotado | opacidade .55 + pill "Esgotado", não clicável |
-| Sem permissão | tela X06-b explicando o motivo, ou controle desabilitado com motivo ("Somente o caixa fecha a conta") |
-| Impressora | placeholder "Impressora não conectada" com "Tentar de novo" (desabilitado: "Disponível em versão futura") |
-| Modo leitura | faixa "Esta comanda está {status}. Não é possível lançar itens." |
-| Rascunho pendente | aviso brand-soft "Há itens não enviados na Mesa 4. Eles ficam salvos neste aparelho." |
+| Carregando | skeleton com **a mesma quantidade e dimensões** do conteúdo final |
+| Vazio (nada ainda) | ícone linear, título curto, ação seguinte ("Abra uma mesa para começar") |
+| Vazio (filtro/busca) | "Nada para «termo»" + ação de limpar |
+| Erro | ErrorState com ação "Tentar de novo" |
+| Sucesso | toast discreto de poucos segundos; marcos importantes (pagamento) ganham tela própria |
+| Sem conexão | banner persistente, ações de gravação desabilitadas com o motivo "Sem conexão". **Não há fila de vendas na v1** |
+| Degradado | pill/banner "Reconectando"; o fluxo crítico nunca é bloqueado |
+| Item esgotado | opacidade reduzida + pill "Esgotado", não clicável |
+| Sem permissão | tela de erro X06 explicando o motivo, ou controle desabilitado com motivo |
+| Recurso fora da v1 | botão desabilitado com "disponível em breve", nunca some sem explicação |
+| Modo leitura | faixa explicando por que a tela está travada para edição |
+| Rascunho pendente | aviso de que há itens não enviados ainda salvos localmente |
 
-## 8. Acessibilidade e operação
+## 10. Acessibilidade e operação
 
-### 8.1 Acessibilidade
-- Contraste conforme §2.4. Foco visível: anel de `--focus-width` (2 px; 4 px no KDS) na cor `focus`, com `outline-offset` de 2 px, nunca coberto por barras fixas (`scroll-padding`).
-- Controles reais (`button`, `a`, `input` com `label`); ícone sem texto com `aria-label`; um `h1` por tela; landmarks (`header`, `nav`, `main`); tabelas com `caption` `sr-only`.
-- Modal, drawer e sheet: foco preso, fundo `inert`, `Esc` fecha, foco volta ao gatilho.
-- Valores que mudam (total, "Falta pagar", rascunho) em `aria-live="polite"`; erros em `role="alert"`; só "Sem conexão" é `assertive`. Cronômetros não anunciam por segundo, só a mudança de faixa.
-- `prefers-reduced-motion` e `prefers-color-scheme` respeitados. Zoom a 200% sem perder função; sem rolagem horizontal da página.
-- Nada depende de hover nem de gesto. Atalhos de teclado nunca são o único caminho.
+- Contraste conforme §2.4. Foco sempre visível, anel reforçado (4 px) no KDS.
+- Controles reais (`button`, `a`, `input` com `label`); ícone sem texto com `aria-label`; um título principal por tela; landmarks de cabeçalho/navegação/conteúdo; tabelas com legenda para leitor de tela.
+- Modal, drawer e sheet: foco preso dentro, `Esc` fecha, foco volta ao gatilho que abriu.
+- Valores que mudam sozinhos (total, "falta pagar") anunciados de forma discreta; erros anunciados de forma mais assertiva; só "sem conexão" interrompe. Cronômetros não anunciam a cada segundo, só a mudança de faixa de SLA.
+- Preferência de movimento reduzido e de tema do sistema respeitadas. Zoom a 200% sem perder função; sem rolagem horizontal da página inteira.
+- Nada depende de hover nem de gesto. Atalhos de teclado nunca são o único caminho para uma ação.
 
-### 8.2 Camadas de feedback do sistema
-Da menos para a mais intrusiva; use a menor que resolve.
+## 11. Conteúdo
 
-| Camada | Quando | Visual | Posição |
-|---|---|---|---|
-| **Pill de status** | sempre presente | H 32, ícone + texto (X03) | cabeçalho: ao lado do Avatar (Garçom), TopBar (Caixa), cabeçalho (KDS), rodapé da SideNav (Gestão) |
-| **Banner** | estado ≠ sincronizado | faixa `control`, ícone + texto + ação; brand (degradado), danger (sem conexão, impressora), success (voltou, some em 4 s) | logo abaixo do cabeçalho da tela, largura do conteúdo; empurra o conteúdo em vez de cobrir |
-| **Toast** | resultado de ação | 360 px no desktop, `100% − 32` no celular, H mín. 56, faixa lateral de 6 px com a cor semântica, ícone + texto + ação opcional; máx. 3 empilhados, duplicatas agrupadas | desktop: canto inferior direito, acima do ShortcutFooter; celular: **topo**, abaixo da safe area, para não cobrir o rodapé com o CTA; KDS: base central |
-| **Inline** | erro de campo ou linha | ícone + texto `danger-text` junto ao campo, foco no primeiro erro | no próprio elemento |
-| **Diálogo** | só quando exige decisão | ConfirmDialog (§5) | centro (modal) ou base (sheet) |
-
-Duração: sucesso 3–4 s; atenção 8 s; Desfazer 5 s; erro e persistentes (item pronto, nova versão) até o usuário agir. Toast de erro nunca some sozinho.
-Nomes de serviço na interface: Cozinha, Fidelidade, Relatórios, Servidor.
-
-### 8.3 Ações destrutivas e Desfazer
-- Preferir **Desfazer** (5 s, mutação adiada, fechar a tela descarta a ação) para remover item e avançar ficha do KDS.
-- Confirmar com diálogo apenas quando não há como desfazer ou o efeito é alto: cancelar pedido, remover pagamento lançado, cancelar cobrança Pix, sair do pagamento com valores lançados, inativar produto ou usuário, descartar alterações, pedir a conta, abrir comanda sobre conta aguardando pagamento, limpar rascunho, remover item já entregue. O botão destrutivo leva o nome da ação ("Cancelar pedido"); o seguro é "Voltar" e recebe o foco inicial.
-
-### 8.4 Dinheiro, gorjeta e divisão
-- Valores em tela de comanda **aberta** são **estimados** e levam o rótulo "Estimado" (tooltip: "O valor final é calculado ao fechar a conta"); depois de fechar valem os valores do servidor, sem rótulo.
-- Gorjeta de 10% vem sugerida (switch ligado) e é sempre removível; arredondamento *round half up* em centavos. No pagamento ela já está definida: "Gorjeta definida no fechamento."
-- Divisão de conta nunca altera o total sem mostrar a diferença: "Soma das parcelas R$ X · Diferença R$ 0,00" precisa fechar em zero; sobras de centavos aparecem como "R$ 0,01 a mais nas primeiras N parcelas".
-- Cartão em qualquer subtipo (crédito, débito, vale-refeição) é só visual; o servidor recebe "cartão".
-
-### 8.5 Teclado
-Caixa: `F2 F4 F6 F7 F8`, `/`, `?`, `Esc`, `1–5`, `Ctrl+Enter`; atalhos não disparam com foco em campo de texto, exceto F-keys e Esc. KDS: ver §6.3.
-
-## 9. Conteúdo
-
-- Frases curtas, verbo + objeto, voz ativa, sem jargão, *sentence case*. Um termo por conceito: **Mesa, Comanda, Pedido, Ticket (KDS)**. Pedido aparece como "Pedido 0482" (4 dígitos); local como "Mesa 6", "Balcão 27", "Retirada 12".
-- **Erros** dizem o que houve e como resolver, sem culpar: "Esta mesa já está aberta. Abra a comanda existente ou escolha outra mesa." Não pedem desculpa e nunca mostram código solto (o `requestId` fica em "Ver detalhes").
-- **Vazios** indicam a próxima ação. **Sucessos** repetem o verbo do botão ("Enviar para a cozinha" → "3 itens enviados para a cozinha.").
-- **Degradação** explica o que continua funcionando: "Cozinha fora do ar. Você continua vendendo; os itens são enviados quando ela voltar."
-- **Formatos:** CPF `000.000.000-00` (mascarado após vincular: `***.456.789-**`), telefone `(84) 99999-9999`, tempo "12 min", "1h12", cronômetro `18:05`, turnos (almoço, tarde, jantar, madrugada).
-- **Honestidade de escopo:** funções fora da v1 aparecem desabilitadas com motivo ("Não disponível nesta versão", "Em breve"), nunca somem sem explicação nem fingem funcionar. O QR Pix traz a legenda "QR Code de demonstração".
+- Frases curtas, verbo + objeto, voz ativa, sem jargão, *sentence case*. Um termo por conceito: **Mesa, Comanda, Pedido, Ticket (KDS)**. Pedido aparece como "Pedido 0482" (4 dígitos); local como "Mesa 6", "Balcão 0483".
+- **Erros** dizem o que houve e como resolver, sem culpar o usuário. Não pedem desculpa nem mostram código técnico solto na tela.
+- **Vazios** indicam a próxima ação. **Sucessos** repetem o verbo do botão que disparou a ação.
+- **Degradação** explica o que continua funcionando enquanto algo está fora do ar.
+- **Formatos:** CPF `000.000.000-00` (mascarado após vincular), telefone `(84) 99999-9999`, tempo "12 min", "1 h 12", cronômetro `18:05`.
+- **Honestidade de escopo:** funções fora da v1 aparecem desabilitadas com motivo, nunca somem sem explicação nem fingem funcionar. O QR Pix é de demonstração.
 - Textos de interface ocupam até 30% mais que em inglês: nada de largura fixa em rótulo.
 
-## 10. Para gerar telas (prompt base)
+## 12. `tokens.css` (copiar para `design-tokens/tokens.css`)
 
-**Prompt base:** "Use o DESIGN.md do VaptPDV: fundo creme, ação em mostarda (preenchimento, texto café por cima), texto em café, sucesso manjericão, erro tomate; Plus Jakarta Sans; cantos 14/20/24 e pill; sem emojis nem neon; tema claro e escuro; alvos ≥ 44 px; estados completos (carregando, vazio, erro, sem conexão, esgotado, sem permissão). Gere a tela [nome] do módulo [Caixa | Garçom | KDS | Gestão] conforme a seção 6, usando os dados de exemplo abaixo."
-
-**Dados de exemplo** (para a tela parecer real): estabelecimento "VaptPDV Bar"; garçons Lucas e Ana; mesa 4 com 3 pessoas aberta há 34 min; produtos Hambúrguer artesanal R$ 34,90, Cheeseburger duplo, Batata rústica, Onion rings (esgotado), Chopp 300 ml, Limonada suíça; Pedido 0482 com subtotal R$ 131,80, gorjeta R$ 13,18 e total R$ 144,98; R$ 60,00 em dinheiro já lançados e "Faltam R$ 84,98"; KDS com Mesa 6 (2× Cheeseburger duplo, "Sem picles") em 01:12 e uma ficha com "Alergia: sem glúten".
-
-**Variações por módulo:**
-- *Garçom:* celular 390×844, retrato, zona do polegar, CTA fixo no rodapé, BottomNav de 4 destinos.
-- *Caixa:* 1440×900, rail de 88 px, grade de 4 colunas, painel direito de 440 px com Cobrar, rodapé de atalhos.
-- *KDS:* 1920×1080, tema escuro, 3 colunas, tipografia gigante, borda lateral de SLA com texto.
-- *Gestão:* 1440×900, sidebar de 248 px, 4 KPIs, gráfico de barras em mostarda com rótulos diretos.
-
-## 11. `tokens.css` (copiar para `design-tokens/tokens.css`)
-
-Hex só aqui; o resto do código usa `var(--…)` (o Stylelint barra hex fora deste arquivo).
+Hex só aqui; o resto do código usa `var(--…)`.
 
 ```css
 :root {
@@ -351,20 +430,15 @@ Hex só aqui; o resto do código usa `var(--…)` (o Stylelint barra hex fora de
   --color-tint-1:#FBE6B8; --color-tint-2:#E4EFD5; --color-tint-3:#F8D9CC; --color-tint-4:#EBDDCB;
   /* tipografia */
   --font-sans:"Plus Jakarta Sans", system-ui, sans-serif;
-  --fs-kpi:30px; --fs-title:24px; --fs-section:18px; --fs-body:15px; --fs-body-sm:14px; --fs-caption:13px; --fs-micro:12px;
-  --fs-kds-place:36px; --fs-kds-order:22px; --fs-kds-qty:32px; --fs-kds-item:30px; --fs-kds-note:22px;
-  --fs-kds-allergy:24px; --fs-kds-button:26px; --fs-kds-timer:26px; --fs-kds-column:30px; --fs-kds-clock:44px;
-  --kds-scale:1;
+  --fs-kpi:30px; --fs-title:24px; --fs-section:18px; --fs-body:15px; --fs-caption:13px; --fs-micro:12px;
+  --fs-kds-place:40px; --fs-kds-qty:32px; --fs-kds-item:30px; --fs-kds-note:22px;
+  --fs-kds-allergy:28px; --fs-kds-button:26px; --fs-kds-timer:24px; --fs-kds-header:32px; --fs-kds-clock:32px;
   /* forma */
   --radius-xs:6px; --radius-control:14px; --radius-card:20px; --radius-card-lg:24px;
   --radius-btn-lg:18px; --radius-sheet:28px; --radius-pill:999px;
   --space-1:4px; --space-2:8px; --space-3:12px; --space-4:16px; --space-6:24px; --space-8:32px; --space-12:48px;
   --shadow-1:0 1px 2px rgba(43,32,25,.06); --shadow-float:0 6px 16px rgba(43,32,25,.16);
   --target-min:44px; --focus-width:2px; --focus-offset:2px;
-  /* movimento e camadas */
-  --dur-fast:100ms; --dur-base:160ms; --dur-slow:240ms;
-  --ease-out:cubic-bezier(.2,.8,.2,1); --ease-in:cubic-bezier(.4,0,1,1);
-  --z-sticky:10; --z-nav:20; --z-fab:30; --z-drawer:40; --z-modal:50; --z-toast:60;
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
@@ -381,50 +455,44 @@ Hex só aqui; o resto do código usa `var(--…)` (o Stylelint barra hex fora de
   --color-tint-1:#4A3815; --color-tint-2:#27382A; --color-tint-3:#4A2A20; --color-tint-4:#3A2E25;
   --shadow-1:none; --shadow-float:none;
 }
-/* "Automático": lib/theme.ts lê prefers-color-scheme e grava data-theme="light" ou "dark" na raiz; o CSS só conhece esses dois valores. */
 :root[data-surface="kds"] { --focus-width:4px; --focus-offset:4px; --target-min:56px; }
 body { font-family:var(--font-sans); background:var(--color-bg); color:var(--color-text); font-variant-numeric:tabular-nums; }
 :focus-visible { outline:var(--focus-width) solid var(--color-focus); outline-offset:var(--focus-offset); }
 @media (prefers-reduced-motion: reduce) { *, ::before, ::after { animation:none !important; transition:none !important; } }
 ```
 
-## 12. Ícones e imagens
+## 13. Ícones e imagens
 
-- **Ícones:** `lucide-react`, traço de 2 px, importados um a um, mais `icon-pix.svg` (único ícone próprio). Tamanhos: 14 (pill), 20 (botão), 24 (navegação), 28 (tile de pagamento), 40 (tile de produto e estados vazios), 64 (venda concluída). Cor herdada do texto do contexto; nunca decorativos coloridos. Confirmar no pacote instalado que cada nome citado existe e trocar pelo equivalente mais próximo se faltar.
-- **Navegação:** Venda `shopping-cart` · Mesas `layout-grid` · Pedidos `clipboard-list` · Caixa `wallet` · Ajustes `settings` · Gestão: Visão geral `layout-dashboard`, Cardápio `book-open`, Estoque `package`, Vendas `chart-no-axes-column`, Equipe `users`, Fiscal `file-text`.
-- **Ações e estados:** observação `message-square-text` · alergia `shield-alert` · remover `trash-2` · erro `circle-alert` · atenção `triangle-alert` · busca `search` · tema `sun-moon`, `sun`, `moon` · pagamento: Dinheiro `banknote`, Cartão `credit-card`, Vale-refeição `ticket`, Pix `icon-pix`.
-- **Imagem de produto:** não existe na v1; o tile tintado é a identidade do produto. Quando houver foto, ela ocupa o mesmo quadrado (96 no Caixa, 56 no Garçom) com `object-fit: cover` e `radius-control`, e o tile tintado continua como fallback. Uma variante "foto grande" (4:3 no topo do card) é permitida só no Caixa e só se o estabelecimento tiver foto em todo o cardápio, para a grade não ficar irregular.
-- **Logo:** quadrado "V" em mostarda com `on-brand` (56 no KDS, 48 no rail, 40 na sidebar); no login, logo + "VaptPDV" com "PDV" em mostarda sobre fundo claro usando `brand-text` para manter 4,5:1.
+- **Ícones:** traço fino uniforme, importados individualmente. Tamanhos: 14–16 (pill), 20 (botão), 24 (navegação), 28–32 (tile de pagamento/categoria), 40–64 (estados vazios, venda concluída). Cor herdada do texto do contexto; nunca decorativos coloridos.
+- **Navegação:** Venda `carrinho` · Mesas `grade` · Pedidos `prancheta` · Receber `carteira` · Ajustes `engrenagem` · Gestão: Visão geral `painel`, Cardápio `livro`, Estoque `caixa`, Vendas `barras`, Equipe `pessoas`, Fiscal `documento`.
+- **Ações e estados:** observação `balão de texto` · alergia `escudo de alerta` · remover `lixeira` · erro `alerta circular` · atenção `triângulo de alerta` · busca `lupa` · tema `sol`/`lua` · pagamento: Dinheiro `nota`, Cartão `cartão`, Pix `QR`.
+- **Imagem de produto:** não existe na v1; o tile tintado é a identidade do produto (§2.5, `ProductTile`).
+- **Logo:** quadrado "V" em mostarda com `on-brand`.
 
-## 13. Responsividade, densidade e impressão
+## 14. Responsividade, densidade e impressão
 
 | Faixa | Largura | Comportamento |
 |---|---|---|
-| Compacta | < 600 | Garçom; Login em lista de linhas de 72; drawer vira sheet |
-| Média | 600–1023 | Garçom em tablet (grade de 3 a 6 colunas); Caixa abaixo de 1024: rail de 72 e painel de pedido vira drawer |
-| Grande | 1024–1279 | Caixa com grade de 3 colunas; tabelas ainda em modo tabela |
-| Expandida | ≥ 1280 | Caixa com grade de 4 colunas e mesas em 6; drawers de 560 para formulários longos |
+| Compacta | < 600 | Garçom; login em lista de cards; drawer vira sheet |
+| Média | 600–1023 | Garçom em tablet (mais colunas na grade); Caixa abaixo de 1024 com rail estreito e painel de pedido como drawer |
+| Grande | 1024–1279 | Caixa com grade de produtos reduzida; tabelas ainda em modo tabela |
+| Expandida | ≥ 1280 | Caixa e Gestão em layout completo (grade cheia, drawers largos) |
 
-- Mobile first no Garçom; desktop first no Caixa e na Gestão (com fallback usável). KDS é 16:9, mas nada se perde a 1280×720.
-- Tabelas com menos de 1024 px viram lista de cards; formulários em coluna única; `100dvh` e `env(safe-area-inset-*)` no celular; teclado virtual nunca cobre o botão primário do sheet.
-- **Impressão:** só o recibo. `@page { size: 80mm auto }`, preto sobre branco, sem sombra, fonte tabular, `@media print` esconde todo o resto. "Imprimir via do cliente" usa o diálogo do navegador (sem impressora térmica na v1).
-- **PWA:** `theme_color` #F2A81D, `background_color` #FBF7F1, ícones 192/512 com versão *maskable*; Garçom prefere retrato.
+- Mobile first no Garçom; desktop first no Caixa e na Gestão (com fallback usável). KDS é 16:9, mas nada se perde em telas menores.
+- Tabelas com menos de 1024 px viram lista de cards; formulários em coluna única; teclado virtual nunca cobre o botão primário de um sheet.
+- **Impressão:** só o recibo, preto sobre branco, sem sombra, fonte tabular; todo o resto fica oculto na impressão.
+- **PWA:** cor de tema mostarda, fundo creme; Garçom prefere retrato.
 
-## 14. Escopo da v1 e decisões deste documento
+## 15. Escopo da v1
 
-**Fora da v1** (a interface mostra desabilitado com motivo ou omite): fila offline de vendas e sincronização posterior, NFC-e e contingência, desconto, transferência de mesa, impressora térmica e de cozinha, leitor de código de barras, resgate de cashback, estações do KDS além de Cozinha e Bar, foto de produto, abertura e fechamento de turno de caixa.
+**Fora da v1** (a interface mostra desabilitado com motivo ou omite): fila offline de vendas e sincronização posterior, NFC-e e contingência fiscal, desconto, transferência de mesa, impressora térmica real, leitor de código de barras, resgate de cashback, estações do KDS além de Cozinha e Bar, foto de produto, abertura e fechamento formal de turno de caixa.
 
-**Divergências da versão anterior deste arquivo, resolvidas para bater com as specs:**
-- KDS: filtros Chapa, Fritadeira e Montagem saíram; ficam Todas, Cozinha e Bar.
-- Offline: "vendas em fila" e "NFC-e em contingência" saíram; a v1 mostra cache com carimbo e bloqueia gravação com motivo.
-- Caixa: o leitor de código de barras saiu da busca; F2 e `/` só buscam por nome.
-- Banner "Offline com N vendas na fila" substituído pela tabela de §8.2.
-- Visão geral: "vendas pendentes de sincronização" só aparece quando o serviço informar; sem dado, o alerta não é exibido.
+## 16. Decisões registradas neste documento
 
-**Decisões novas, para você validar:**
-- `brand-edge`: a mostarda no tema claro dá 2:1 como linha; bordas de seleção e o marcador "Minha" passam a usar este token (4,7:1). O botão e o chip continuam mostarda cheia.
-- Toast do Garçom no **topo** do celular, para não cobrir o rodapé fixo com "Enviar para a cozinha".
-- Status "Aguardando pagamento" em `danger`, igual a "Conta pedida", porque é a mesma situação vista da comanda e da mesa.
-- Tokens `brand-hover`, `brand-press`, `nav-text`, `nav-text-2` e a escala de z-index foram criados porque as specs e o CSS precisam deles.
+- `brand-edge`: a mostarda pura no tema claro dá só 2:1 como linha (§2.4); por isso bordas de seleção e o marcador "Minha" usam este token à parte. Botão e chip continuam mostarda cheia.
+- A borda de 2 px que marca "Conta pedida" no card de Mesa usa uma classe própria (`pay`/equivalente), nunca reaproveita uma classe utilitária de texto pequeno — um erro desse tipo quebra visualmente o card inteiro (fonte, cor e espaçamento somem juntos).
+- Qualquer reset de estilo de base (ex.: zerar aparência padrão de `button`) deve ter prioridade **menor** que as classes de componente do §6, para que um `<button>` usado como Mesa, Card ou Chip sempre receba o visual do componente, não o reset puro.
+- Status "Aguardando pagamento" e "Conta pedida" usam a mesma cor (`danger`), porque representam a mesma situação vista da comanda e da mesa.
+- Toast do Garçom aparece no topo do celular, para não cobrir o rodapé fixo com o CTA principal.
 
-**A validar com usuários reais:** legibilidade do KDS a 3 m com luz de cozinha; tamanho dos alvos do Garçom com luva ou mão molhada; se "Aguardando pagamento" em vermelho gera alarme demais no Caixa em horário de pico.
+**A validar com usuários reais:** legibilidade do KDS a 3 m com luz de cozinha; tamanho dos alvos do Garçom com luva ou mão molhada; se "Aguardando pagamento" em vermelho gera alarme demais no Caixa em horário de pico; conteúdo completo das telas M04 e M08 quando a spec `telas/40-gestao.md` for fornecida.
