@@ -1,7 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
-  Activity,
-  Printer,
   User,
   LogOut,
   Plus,
@@ -20,6 +18,11 @@ import { ComprovanteVenda } from './components/ComprovanteVenda';
 import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
+import { ThemeToggle } from '../../components/ui/ThemeToggle';
+import { ToggleSwitch } from '../../components/ui/ToggleSwitch';
+import { ModalCancelarComanda } from '../../components/ui/ModalCancelarComanda';
+import { LogoMark } from '../../components/ui/Logo';
+import { formatCurrency } from '../../lib/utils';
 import { useSessionStore } from '../../stores/useSessionStore';
 import { useComandaStore } from '../../stores/useComandaStore';
 import {
@@ -28,19 +31,14 @@ import {
   useLancarItem,
   useAbrirComanda,
   useFecharComanda,
+  useCancelarComanda,
 } from '../../hooks/useComandas';
 import { useProdutosDisponiveis } from '../../hooks/useProdutos';
 import { useGarconsAtivos } from '../../hooks/useUsuarios';
 import type { Comanda, Produto } from '../../types/api';
 import { ApiError } from '../../services/apiClient';
 
-export interface ModoCaixaPageProps {
-  apiHealth?: 'online' | 'offline' | 'checking';
-}
-
-export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
-  apiHealth = 'online',
-}) => {
+export const ModoCaixaPage: React.FC = () => {
   const { nomeOperador, perfilAtivo, logout } = useSessionStore();
   const { comandaAtivaId, setComandaAtivaId } = useComandaStore();
 
@@ -54,6 +52,7 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
   const lancarItemMut = useLancarItem();
   const abrirComandaMut = useAbrirComanda();
   const fecharComandaMut = useFecharComanda();
+  const cancelarComandaMut = useCancelarComanda();
 
   // Navegação lateral interna (venda, mesas, pedidos, receber)
   const [abaNavegacao, setAbaNavegacao] = useState<AbaNavegacaoCaixa>('venda');
@@ -75,6 +74,11 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
 
   const [isModalReciboOpen, setIsModalReciboOpen] = useState<boolean>(false);
   const [comandaParaRecibo, setComandaParaRecibo] = useState<Comanda | null>(null);
+
+  // Fechar conta (pela tela de Mesas) e cancelar comanda (dupla validação)
+  const [comandaParaFechar, setComandaParaFechar] = useState<Comanda | null>(null);
+  const [taxaFechamento, setTaxaFechamento] = useState<boolean>(true);
+  const [comandaParaCancelar, setComandaParaCancelar] = useState<Comanda | null>(null);
 
   const [isModalClienteOpen, setIsModalClienteOpen] = useState<boolean>(false);
   const [isModalAbrirMesaOpen, setIsModalAbrirMesaOpen] = useState<boolean>(false);
@@ -206,14 +210,29 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
     }
   };
 
-  // Fechar comanda a partir de MesasCaixaView
-  const handleFecharConta = async (comanda: Comanda) => {
+  // Abre a confirmação de fechamento (permite escolher a gorjeta de 10%)
+  const handleFecharConta = (comanda: Comanda) => {
+    if (!comanda.itens || comanda.itens.length === 0) {
+      showToast('erro', `A Mesa ${comanda.mesa} não tem itens lançados. Lance itens ou cancele a comanda.`);
+      return;
+    }
+    setTaxaFechamento(true);
+    setComandaParaFechar(comanda);
+  };
+
+  const handleConfirmarFecharConta = async () => {
+    if (!comandaParaFechar) return;
+    const comanda = comandaParaFechar;
     try {
       await fecharComandaMut.mutateAsync({
         comandaId: comanda.id,
-        dto: { aplicar_taxa_servico: true },
+        dto: { aplicar_taxa_servico: taxaFechamento },
       });
-      showToast('sucesso', `Conta da Mesa ${comanda.mesa} fechada (Gorjeta 10% aplicada).`);
+      showToast(
+        'sucesso',
+        `Conta da Mesa ${comanda.mesa} fechada${taxaFechamento ? ' (gorjeta de 10% aplicada)' : ''}.`
+      );
+      setComandaParaFechar(null);
       refetchSalao();
       refetchTodas();
     } catch (err) {
@@ -221,6 +240,24 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
         'erro',
         err instanceof ApiError ? err.message : 'Erro ao fechar conta da comanda.'
       );
+    }
+  };
+
+  const handleConfirmarCancelamento = async () => {
+    if (!comandaParaCancelar) return;
+    const comanda = comandaParaCancelar;
+    try {
+      await cancelarComandaMut.mutateAsync(comanda.id);
+      showToast('sucesso', `Comanda da Mesa ${comanda.mesa} cancelada. Mesa liberada.`);
+      refetchSalao();
+      refetchTodas();
+    } catch (err) {
+      showToast(
+        'erro',
+        err instanceof ApiError ? err.message : 'Erro ao cancelar comanda.'
+      );
+    } finally {
+      setComandaParaCancelar(null);
     }
   };
 
@@ -320,7 +357,7 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
     <div className="h-screen w-screen overflow-hidden flex flex-row bg-bg text-text select-none">
       {/* Toast Flutuante no Topo */}
       {toast && (
-        <div className="fixed top-4 right-6 z-60 animate-bounce">
+        <div className="fixed top-4 right-6 z-[60] animate-bounce">
           <div
             className={`flex items-center gap-2 px-4 py-3 rounded-card shadow-modal border text-xs font-bold ${
               toast.tipo === 'sucesso'
@@ -350,17 +387,8 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
         {/* TopBar Superior de 80px (DESIGN.md §6.1) */}
         <header className="h-20 min-h-[80px] max-h-[80px] bg-surface border-b border-border px-6 flex items-center justify-between shrink-0 z-10">
           <div className="flex items-center gap-4">
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-xl font-black text-text tracking-tight">Balcão & Caixa</h1>
-                <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-brand-soft text-brand-text border border-brand/20">
-                  Estação 01
-                </span>
-              </div>
-              <p className="text-xs text-text-2">
-                Operação de Frente de Caixa · Terminal Desktop 1440×900
-              </p>
-            </div>
+            <LogoMark size={40} className="shrink-0" />
+            <h1 className="text-xl font-black text-text tracking-tight">Balcão &amp; Caixa</h1>
 
             <Button
               variant="outline"
@@ -376,34 +404,8 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
             </Button>
           </div>
 
-          {/* Indicadores de Conexão, Hardware e Operador */}
           <div className="flex items-center gap-3">
-            {/* Sincronização API Fastify */}
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-2 border border-border text-xs">
-              <Activity className="w-3.5 h-3.5 text-text-2" />
-              <span className="text-text-2">API Fastify:</span>
-              {apiHealth === 'online' ? (
-                <span className="font-semibold text-success flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-success animate-pulse" />
-                  Sincronizado
-                </span>
-              ) : (
-                <span className="font-semibold text-danger flex items-center gap-1">
-                  <span className="w-2 h-2 rounded-full bg-danger" />
-                  Desconectado
-                </span>
-              )}
-            </div>
-
-            {/* Impressora Placeholder (DESIGN.md §6.1) */}
-            <div
-              className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-2/60 border border-border text-xs text-text-2"
-              title="Impressora de cozinha e balcão não conectada"
-            >
-              <Printer className="w-3.5 h-3.5 text-text-2" />
-              <span>Impressora:</span>
-              <span className="font-medium text-text-2/80">Térmica 80mm</span>
-            </div>
+            <ThemeToggle variante="icon" />
 
             {/* Operador Ativo */}
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface border border-border shadow-soft text-xs font-semibold">
@@ -449,6 +451,7 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
               onSelecionarComanda={(id) => setComandaAtivaId(id)}
               onAbrirModalPagamento={handleAbrirPagamento}
               onAbrirModalCliente={() => setIsModalClienteOpen(true)}
+              onCancelarComanda={(cmd) => setComandaParaCancelar(cmd)}
               nomeCliente={nomeCliente}
               documentoCliente={documentoCliente}
               onToast={showToast}
@@ -471,6 +474,7 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
               setIsModalAbrirMesaOpen(true);
             }}
             onFecharConta={handleFecharConta}
+            onCancelarComanda={(cmd) => setComandaParaCancelar(cmd)}
             onReceberPagamento={handleAbrirPagamento}
           />
         )}
@@ -525,10 +529,6 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
               Fechar Janela
             </span>
           </div>
-
-          <div className="text-[11px] text-text-2 hidden md:block">
-            VaptPDV 1.0 · Módulo 1 (Desktop 1440×900)
-          </div>
         </footer>
       </div>
 
@@ -542,6 +542,70 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
         nomeOperador={nomeOperador}
         documentoClienteInicial={documentoCliente}
         onToast={showToast}
+      />
+
+      {/* Confirmação de fechamento de conta (permite definir a gorjeta de 10%) */}
+      <Modal
+        isOpen={!!comandaParaFechar}
+        onClose={() => setComandaParaFechar(null)}
+        title={comandaParaFechar ? `Fechar conta da Mesa ${comandaParaFechar.mesa}` : 'Fechar conta'}
+        maxWidth="sm"
+      >
+        {comandaParaFechar && (() => {
+          const subtotal = (comandaParaFechar.itens || []).reduce(
+            (acc, it) => acc + parseFloat(it.preco_copiado || '0') * it.quantidade,
+            0
+          );
+          const taxa = taxaFechamento ? Math.round(subtotal * 10) / 100 : 0;
+          return (
+            <div className="space-y-4 py-1">
+              <div className="p-3.5 rounded-card bg-surface-2/60 border border-border space-y-1.5 text-sm">
+                <div className="flex justify-between text-text-2">
+                  <span>Subtotal ({comandaParaFechar.itens?.length || 0} itens)</span>
+                  <span className="font-semibold text-text tabular-nums">{formatCurrency(subtotal)}</span>
+                </div>
+                <div className="flex justify-between text-text-2">
+                  <span>Gorjeta 10%</span>
+                  <span className="font-semibold text-text tabular-nums">{formatCurrency(taxa)}</span>
+                </div>
+                <div className="flex justify-between items-baseline pt-2 border-t border-border">
+                  <span className="font-bold text-text">Total</span>
+                  <span className="text-xl font-black text-text tabular-nums">{formatCurrency(subtotal + taxa)}</span>
+                </div>
+              </div>
+
+              <ToggleSwitch
+                checked={taxaFechamento}
+                onChange={setTaxaFechamento}
+                label="Aplicar gorjeta de 10% (garçom)"
+                description="Calculada pelo servidor ao fechar a conta"
+                className="w-full"
+              />
+
+              <div className="flex justify-end gap-2 pt-3 border-t border-border">
+                <Button variant="outline" onClick={() => setComandaParaFechar(null)}>
+                  Voltar
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={handleConfirmarFecharConta}
+                  isLoading={fecharComandaMut.isPending}
+                >
+                  Fechar conta
+                </Button>
+              </div>
+            </div>
+          );
+        })()}
+      </Modal>
+
+      {/* Dupla validação para cancelar a comanda */}
+      <ModalCancelarComanda
+        isOpen={!!comandaParaCancelar}
+        mesa={comandaParaCancelar?.mesa}
+        isLoading={cancelarComandaMut.isPending}
+        onClose={() => setComandaParaCancelar(null)}
+        onConfirmar={handleConfirmarCancelamento}
       />
 
       {/* Modal de Exibição / Reimpressão de Recibo Térmico */}

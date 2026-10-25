@@ -816,7 +816,7 @@ export const ModalPagamento: React.FC<ModalPagamentoProps> = ({
       {/* Diálogo de Segurança: Confirmação de Gaveta (Dinheiro Já Lançado) */}
       {showConfirmacaoGaveta && (
         <div
-          className="fixed inset-0 z-60 flex items-center justify-center p-4"
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4"
           role="alertdialog"
           aria-modal="true"
         >

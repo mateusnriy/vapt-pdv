@@ -7,6 +7,7 @@ import {
   AlertCircle,
   Receipt,
   ShoppingCart,
+  Ban,
 } from 'lucide-react';
 import type { Comanda, Usuario } from '../../../types/api';
 import { formatCurrency, formatElapsedTime } from '../../../lib/utils';
@@ -21,6 +22,7 @@ export interface MesasCaixaViewProps {
   onSelecionarMesa: (comanda: Comanda) => void;
   onAbrirMesa: (numeroMesa?: string) => void;
   onFecharConta: (comanda: Comanda) => void;
+  onCancelarComanda: (comanda: Comanda) => void;
   onReceberPagamento: (comanda: Comanda) => void;
 }
 
@@ -31,6 +33,7 @@ export const MesasCaixaView: React.FC<MesasCaixaViewProps> = ({
   onSelecionarMesa,
   onAbrirMesa,
   onFecharConta,
+  onCancelarComanda,
   onReceberPagamento,
 }) => {
   const [filtro, setFiltro] = useState<FiltroMesaCaixa>('todas');
@@ -190,7 +193,7 @@ export const MesasCaixaView: React.FC<MesasCaixaViewProps> = ({
               return (
                 <div
                   key={mesaNum}
-                  className="rounded-card border-2 border-dashed border-[#2F7D4F]/30 bg-surface/80 p-5 flex flex-col justify-between hover:border-success hover:bg-surface transition-all group min-h-[170px]"
+                  className="rounded-card border-2 border-dashed border-success/30 bg-surface/80 p-5 flex flex-col justify-between hover:border-success hover:bg-surface transition-all group min-h-[170px]"
                 >
                   <div className="flex items-start justify-between">
                     <div>
@@ -318,10 +321,25 @@ export const MesasCaixaView: React.FC<MesasCaixaViewProps> = ({
                     size="sm"
                     leftIcon={<Receipt className="w-3 h-3 text-danger" />}
                     onClick={() => onFecharConta(comanda!)}
+                    disabled={itensCount === 0}
                     className="text-xs font-bold text-danger hover:bg-danger-soft"
-                    title="Fechar Conta e pedir pagamento"
+                    title={
+                      itensCount === 0
+                        ? 'Lance itens antes de fechar a conta'
+                        : 'Fechar conta e liberar para pagamento'
+                    }
                   >
                     Fechar
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => onCancelarComanda(comanda!)}
+                    className="px-2 text-text-2 hover:text-danger hover:bg-danger-soft"
+                    title="Cancelar comanda e liberar a mesa"
+                    aria-label={`Cancelar comanda da mesa ${mesaNum}`}
+                  >
+                    <Ban className="w-4 h-4" />
                   </Button>
                 </div>
               </div>

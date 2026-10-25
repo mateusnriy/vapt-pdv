@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  UtensilsCrossed,
   ShoppingCart,
   LayoutGrid,
   ClipboardList,
@@ -9,6 +8,7 @@ import {
   LogOut,
   User,
 } from 'lucide-react';
+import { LogoMark } from '../../../components/ui/Logo';
 import { useSessionStore } from '../../../stores/useSessionStore';
 
 export type AbaNavegacaoCaixa = 'venda' | 'mesas' | 'pedidos' | 'receber';
@@ -68,11 +68,11 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
       <div className="flex flex-col items-center gap-4 w-full">
         <button
           onClick={() => onAbaChange?.('venda')}
-          className="w-12 h-12 rounded-[14px] bg-brand text-on-brand flex items-center justify-center font-black text-xl shadow-soft hover:opacity-95 transition-transform active:scale-95"
+          className="rounded-[14px] shadow-soft hover:opacity-95 transition-transform active:scale-95"
           title="VaptPDV — Início / Venda"
           aria-label="VaptPDV Início"
         >
-          <UtensilsCrossed className="w-6 h-6 text-on-brand" />
+          <LogoMark size={48} />
         </button>
 
         {/* Itens de Navegação Primária */}

@@ -8,6 +8,9 @@ import {
   Clock,
   Receipt,
   ChevronDown,
+  ChevronsLeft,
+  ChevronsRight,
+  Ban,
 } from 'lucide-react';
 import type { Comanda, ItemComanda } from '../../../types/api';
 import { formatCurrency, formatElapsedTime } from '../../../lib/utils';
@@ -27,6 +30,7 @@ export interface PainelComandaProps {
   onSelecionarComanda: (comandaId: number) => void;
   onAbrirModalPagamento: (comanda: Comanda) => void;
   onAbrirModalCliente: () => void;
+  onCancelarComanda: (comanda: Comanda) => void;
   nomeCliente?: string;
   documentoCliente?: string;
   onToast: (tipo: 'sucesso' | 'erro', mensagem: string) => void;
@@ -40,6 +44,7 @@ export const PainelComanda: React.FC<PainelComandaProps> = ({
   onSelecionarComanda,
   onAbrirModalPagamento,
   onAbrirModalCliente,
+  onCancelarComanda,
   nomeCliente,
   onToast,
   taxa10,
@@ -51,6 +56,8 @@ export const PainelComanda: React.FC<PainelComandaProps> = ({
   const fecharComandaMut = useFecharComanda();
 
   const [itemMutatingId, setItemMutatingId] = useState<number | null>(null);
+  // Painel recolhível: libera espaço para o catálogo quando o operador não precisa da comanda
+  const [recolhido, setRecolhido] = useState<boolean>(false);
 
   // Comanda efetiva (detalhes frescos do useComanda ou item da lista de salão)
   const comanda: Comanda | null =
@@ -155,7 +162,7 @@ export const PainelComanda: React.FC<PainelComandaProps> = ({
 
   // Alternar switch de taxa 10%
   const handleToggleTaxa10 = (aplicar: boolean) => {
-    if (isFechada || isPaga || !possuiItens) return;
+    if (!comanda || isFechada || isPaga) return;
     onTaxa10Change(aplicar);
   };
 
@@ -194,6 +201,46 @@ export const PainelComanda: React.FC<PainelComandaProps> = ({
     }
   };
 
+  // Versão recolhida: trilho fino com resumo (mesa, itens e total) e botão para expandir
+  if (recolhido) {
+    return (
+      <aside
+        className="w-[72px] min-w-[72px] max-w-[72px] h-full flex flex-col items-center gap-4 py-4 bg-surface border-l border-border select-none z-10"
+        aria-label="Painel de comanda recolhido"
+      >
+        <button
+          type="button"
+          onClick={() => setRecolhido(false)}
+          className="w-11 h-11 rounded-input bg-surface-2 border border-border text-text hover:bg-border/40 flex items-center justify-center transition-colors"
+          title="Expandir comanda"
+          aria-label="Expandir comanda"
+          aria-expanded={false}
+        >
+          <ChevronsLeft className="w-5 h-5" />
+        </button>
+
+        <div className="relative">
+          <Receipt className="w-6 h-6 text-text-2" />
+          {itens.length > 0 && (
+            <span className="absolute -top-2 -right-3 min-w-[18px] h-[18px] px-1 rounded-full bg-brand text-on-brand text-[10px] font-black flex items-center justify-center">
+              {itens.reduce((acc, it) => acc + it.quantidade, 0)}
+            </span>
+          )}
+        </div>
+
+        {comanda && (
+          <span className="text-xs font-black text-text [writing-mode:vertical-rl] rotate-180 tracking-wide">
+            Mesa {comanda.mesa}
+          </span>
+        )}
+
+        <span className="mt-auto text-[11px] font-black text-text tabular-nums [writing-mode:vertical-rl] rotate-180">
+          {formatCurrency(totalExibido)}
+        </span>
+      </aside>
+    );
+  }
+
   return (
     <aside
       className="w-[440px] min-w-[440px] max-w-[440px] h-full flex flex-col overflow-hidden bg-surface border-l border-border select-none z-10"
@@ -203,6 +250,16 @@ export const PainelComanda: React.FC<PainelComandaProps> = ({
       <div className="p-4 border-b border-border bg-surface shrink-0 flex flex-col gap-3">
         {/* Seletor Rápido de Mesa Ativa (Alt+M) */}
         <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            onClick={() => setRecolhido(true)}
+            className="min-h-[44px] w-11 rounded-input bg-surface-2 border border-border text-text hover:bg-border/40 flex items-center justify-center transition-colors shrink-0"
+            title="Recolher comanda"
+            aria-label="Recolher comanda"
+            aria-expanded
+          >
+            <ChevronsRight className="w-5 h-5" />
+          </button>
           <div className="relative flex-1">
             <label htmlFor="seletor-mesa" className="sr-only">
               Seletor de Mesa / Comanda
@@ -266,7 +323,18 @@ export const PainelComanda: React.FC<PainelComandaProps> = ({
               </div>
             </div>
 
-            <div>
+            <div className="flex items-center gap-2">
+              {comanda.status === 'aberta' && (
+                <button
+                  type="button"
+                  onClick={() => onCancelarComanda(comanda)}
+                  className="h-8 px-2.5 rounded-full border border-danger/30 text-danger hover:bg-danger-soft text-[11px] font-bold flex items-center gap-1 transition-colors"
+                  title="Cancelar esta comanda e liberar a mesa"
+                >
+                  <Ban className="w-3.5 h-3.5" />
+                  Cancelar
+                </button>
+              )}
               {comanda.status === 'aberta' && (
                 <Badge variant="ocupada" size="sm">
                   Em Aberto
@@ -397,15 +465,15 @@ export const PainelComanda: React.FC<PainelComandaProps> = ({
             title={
               isFechada
                 ? 'Conta já fechada. Gorjeta definida no fechamento.'
-                : !possuiItens
-                ? 'Adicione itens para calcular a taxa.'
-                : undefined
+                : !comanda
+                ? 'Selecione uma comanda para definir a gorjeta.'
+                : 'Aplicada ao fechar a conta (10% sobre o subtotal).'
             }
           >
             <ToggleSwitch
               checked={isFechada ? (parseFloat(comanda?.taxa_servico || '0') > 0) : taxa10}
               onChange={handleToggleTaxa10}
-              disabled={!possuiItens || isFechada || isPaga}
+              disabled={!comanda || isFechada || isPaga}
             />
             <span className="font-medium text-text">Gorjeta 10% (Garçom)</span>
           </div>

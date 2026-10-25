@@ -169,7 +169,7 @@ export const PedidosCaixaView: React.FC<PedidosCaixaViewProps> = ({
           onClick={() => setFiltroStatus('todos')}
           className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
             filtroStatus === 'todos'
-              ? 'bg-text text-white shadow-soft'
+              ? 'bg-text text-bg shadow-soft'
               : 'bg-surface text-text-2 hover:text-text border border-border'
           }`}
         >
@@ -209,7 +209,7 @@ export const PedidosCaixaView: React.FC<PedidosCaixaViewProps> = ({
           onClick={() => setFiltroStatus('cancelada')}
           className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
             filtroStatus === 'cancelada'
-              ? 'bg-text-2 text-white shadow-soft'
+              ? 'bg-text-2 text-bg shadow-soft'
               : 'bg-surface text-text-2 hover:text-text border border-border'
           }`}
         >
