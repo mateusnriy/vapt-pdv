@@ -12,6 +12,7 @@ import {
   Trash2,
 } from 'lucide-react';
 import { ProdutoStepperCard } from './ProdutoStepperCard';
+import { ModalCancelarComanda } from '../../../components/ui/ModalCancelarComanda';
 import { useComanda, useFecharComanda, useLancarItem, useCancelarComanda } from '../../../hooks/useComandas';
 import { useProdutosDisponiveis } from '../../../hooks/useProdutos';
 import { formatCurrency, formatElapsedTime } from '../../../lib/utils';
@@ -55,6 +56,7 @@ export const ComandaMesaView: React.FC<ComandaMesaViewProps> = ({
 
   // Menu de opções rápidas (...)
   const [menuOpcoesAberto, setMenuOpcoesAberto] = useState(false);
+  const [modalCancelarAberto, setModalCancelarAberto] = useState(false);
   const [isEnviandoItens, setIsEnviandoItens] = useState(false);
 
   // Extrai lista única de categorias
@@ -168,14 +170,15 @@ export const ComandaMesaView: React.FC<ComandaMesaViewProps> = ({
     }
   };
 
-  // Cancelar comanda
+  // Cancelar comanda (chamado somente após a dupla validação no modal)
   const handleCancelarComanda = async () => {
-    if (!confirm('Deseja realmente cancelar esta comanda e liberar a mesa?')) return;
     try {
       await cancelarComandaMut.mutateAsync(comandaId);
+      setModalCancelarAberto(false);
       onToast('sucesso', 'Comanda cancelada.');
       onVoltar();
     } catch (err) {
+      setModalCancelarAberto(false);
       if (err instanceof ApiError) {
         onToast('erro', err.message);
       } else {
@@ -282,7 +285,7 @@ export const ComandaMesaView: React.FC<ComandaMesaViewProps> = ({
         </div>
 
         {/* Alerta de Ajuste */}
-        <div className="p-4 rounded-[16px] bg-[#FDF0D2] border border-brand/30 text-xs text-[#8A5200] flex items-start gap-2.5">
+        <div className="p-4 rounded-[16px] bg-brand-soft border border-brand/30 text-xs text-brand-text flex items-start gap-2.5">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <span>Errou algo? Solicite ao caixa no balcão para reabrir a comanda.</span>
         </div>
@@ -376,7 +379,7 @@ export const ComandaMesaView: React.FC<ComandaMesaViewProps> = ({
             type="button"
             onClick={() => setAplicarGorjeta(!aplicarGorjeta)}
             className={`w-12 h-7 rounded-full p-1 transition-colors ${
-              aplicarGorjeta ? 'bg-[#2F7D4F]' : 'bg-surface-2 border border-border'
+              aplicarGorjeta ? 'bg-success' : 'bg-surface-2 border border-border'
             }`}
           >
             <div
@@ -388,7 +391,7 @@ export const ComandaMesaView: React.FC<ComandaMesaViewProps> = ({
         </div>
 
         {/* Alerta Informativo */}
-        <div className="p-4 rounded-[16px] bg-[#FDF0D2] border border-brand/30 text-xs text-[#8A5200] flex items-start gap-2.5">
+        <div className="p-4 rounded-[16px] bg-brand-soft border border-brand/30 text-xs text-brand-text flex items-start gap-2.5">
           <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
           <span>O caixa será avisado. Você não conseguirá mais lançar itens depois de fechar.</span>
         </div>
@@ -466,7 +469,7 @@ export const ComandaMesaView: React.FC<ComandaMesaViewProps> = ({
                 type="button"
                 onClick={() => {
                   setMenuOpcoesAberto(false);
-                  handleCancelarComanda();
+                  setModalCancelarAberto(true);
                 }}
                 className="w-full px-4 py-2.5 text-left text-xs font-bold text-danger hover:bg-danger-soft flex items-center gap-2"
               >
@@ -539,7 +542,7 @@ export const ComandaMesaView: React.FC<ComandaMesaViewProps> = ({
                   </div>
 
                   <div className="text-right">
-                    <span className="bg-[#DDF0E4] text-[#2F7D4F] text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1 mb-1">
+                    <span className="bg-success-soft text-success text-[10px] font-bold px-2 py-0.5 rounded-full inline-flex items-center gap-1 mb-1">
                       <CheckCircle2 className="w-3 h-3" />
                       Gravado
                     </span>
@@ -658,6 +661,15 @@ export const ComandaMesaView: React.FC<ComandaMesaViewProps> = ({
           )}
         </div>
       )}
+
+      {/* Dupla validação para cancelar a comanda */}
+      <ModalCancelarComanda
+        isOpen={modalCancelarAberto}
+        mesa={comanda.mesa}
+        isLoading={cancelarComandaMut.isPending}
+        onClose={() => setModalCancelarAberto(false)}
+        onConfirmar={handleCancelarComanda}
+      />
     </div>
   );
 };

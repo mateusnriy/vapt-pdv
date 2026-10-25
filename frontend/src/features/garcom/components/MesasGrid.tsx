@@ -1,6 +1,8 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, CheckCircle2, WifiOff } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { MesaCard } from './MesaCard';
+import { ThemeToggle } from '../../../components/ui/ThemeToggle';
+import { LogoMark } from '../../../components/ui/Logo';
 import type { Comanda, Usuario } from '../../../types/api';
 
 export type FiltroMesa = 'todas' | 'livres' | 'abertas' | 'minhas' | 'contas';
@@ -10,7 +12,6 @@ export interface MesasGridProps {
   nomeGarcom?: string;
   garcomLogadoId?: number | null;
   garcons?: Usuario[];
-  apiHealth?: 'online' | 'offline' | 'checking';
   totalMesasSalao?: number;
   onAbrirMesa: (numeroMesa: string) => void;
   onVerComanda: (comanda: Comanda) => void;
@@ -21,7 +22,6 @@ export const MesasGrid: React.FC<MesasGridProps> = ({
   nomeGarcom = 'Garçom',
   garcomLogadoId,
   garcons = [],
-  apiHealth = 'online',
   totalMesasSalao = 12,
   onAbrirMesa,
   onVerComanda,
@@ -114,25 +114,16 @@ export const MesasGrid: React.FC<MesasGridProps> = ({
           TOPO: Título, Saudação e Indicador de Conexão (Fiel a G01)
           ───────────────────────────────────────────────────────────── */}
       <div className="flex items-center justify-between mb-4">
-        <div>
-          <h1 className="text-2xl font-black text-text tracking-tight">Salão</h1>
-          <p className="text-xs text-text-2 mt-0.5">Olá, {nomeGarcom} · VaptPDV Bar</p>
+        <div className="flex items-center gap-3">
+          <LogoMark size={40} className="shrink-0" />
+          <div>
+            <h1 className="text-2xl font-black text-text tracking-tight leading-none">Salão</h1>
+            <p className="text-xs text-text-2 mt-1">Olá, {nomeGarcom}</p>
+          </div>
         </div>
 
-        {/* Badge de Conexão no Canto Superior Direito */}
-        <div className="flex items-center">
-          {apiHealth === 'online' ? (
-            <div className="bg-[#DDF0E4] text-[#2F7D4F] text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5 shadow-soft">
-              <CheckCircle2 className="w-3.5 h-3.5" />
-              <span>Conectado</span>
-            </div>
-          ) : (
-            <div className="bg-danger-soft text-danger text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5 shadow-soft">
-              <WifiOff className="w-3.5 h-3.5" />
-              <span>Offline</span>
-            </div>
-          )}
-        </div>
+        {/* Alternar tema claro/escuro */}
+        <ThemeToggle variante="icon" />
       </div>
 
       {/* ─────────────────────────────────────────────────────────────

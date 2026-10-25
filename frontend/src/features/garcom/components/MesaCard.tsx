@@ -45,7 +45,7 @@ export const MesaCard: React.FC<MesaCardProps> = ({
       >
         <div className="flex items-start justify-between">
           <span className="text-lg font-black text-text">Mesa {mesaNumero}</span>
-          <span className="bg-[#DDF0E4] text-[#2F7D4F] rounded-full px-2.5 py-0.5 text-xs font-bold">
+          <span className="bg-success-soft text-success rounded-full px-2.5 py-0.5 text-xs font-bold">
             Livre
           </span>
         </div>

@@ -79,11 +79,11 @@ export const ProdutoStepperCard: React.FC<ProdutoStepperCardProps> = ({
             Esgotado
           </span>
         ) : quantidade > 0 ? (
-          <div className="flex items-center gap-2.5 bg-[#FDF0D2] px-2.5 py-1.5 rounded-full border border-brand/30">
+          <div className="flex items-center gap-2.5 bg-brand-soft px-2.5 py-1.5 rounded-full border border-brand/30">
             <button
               type="button"
               onClick={onDecrementar}
-              className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-text hover:bg-surface-2 active:scale-95 transition-all shadow-soft"
+              className="w-7 h-7 rounded-full bg-surface flex items-center justify-center text-text hover:bg-surface-2 active:scale-95 transition-all shadow-soft"
               aria-label="Diminuir"
             >
               <Minus className="w-3.5 h-3.5" />
@@ -96,7 +96,7 @@ export const ProdutoStepperCard: React.FC<ProdutoStepperCardProps> = ({
             <button
               type="button"
               onClick={onIncrementar}
-              className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-text hover:bg-surface-2 active:scale-95 transition-all shadow-soft"
+              className="w-7 h-7 rounded-full bg-surface flex items-center justify-center text-text hover:bg-surface-2 active:scale-95 transition-all shadow-soft"
               aria-label="Aumentar"
             >
               <Plus className="w-3.5 h-3.5" />

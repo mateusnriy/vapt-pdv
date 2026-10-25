@@ -5,7 +5,6 @@ import {
   User,
   CheckCircle2,
   AlertCircle,
-  ShieldCheck,
   LogOut,
   Users,
 } from 'lucide-react';
@@ -19,13 +18,7 @@ import { useComandaStore } from '../../stores/useComandaStore';
 import { formatCurrency, formatElapsedTime } from '../../lib/utils';
 import type { Comanda } from '../../types/api';
 
-export interface ModoGarcomPageProps {
-  apiHealth?: 'online' | 'offline' | 'checking';
-}
-
-export const ModoGarcomPage: React.FC<ModoGarcomPageProps> = ({
-  apiHealth = 'online',
-}) => {
+export const ModoGarcomPage: React.FC = () => {
   const { usuarioAtivoId, nomeOperador, setUsuarioAtivo, logout, setModo } = useSessionStore();
   const { comandaAtivaId, setComandaAtivaId, setMesaAtiva } = useComandaStore();
 
@@ -142,7 +135,6 @@ export const ModoGarcomPage: React.FC<ModoGarcomPageProps> = ({
                 nomeGarcom={nomeOperador}
                 garcomLogadoId={usuarioAtivoId}
                 garcons={garcons}
-                apiHealth={apiHealth}
                 onAbrirMesa={handleAbrirMesa}
                 onVerComanda={handleVerComanda}
               />
@@ -255,18 +247,6 @@ export const ModoGarcomPage: React.FC<ModoGarcomPageProps> = ({
                     <h2 className="font-black text-base text-text">{nomeOperador}</h2>
                     <p className="text-xs text-text-2 mt-0.5">Garçom · Turno operacional ativo</p>
                   </div>
-                </div>
-
-                {/* Card de Conexão */}
-                <div className="bg-surface border border-border rounded-[20px] p-4 flex items-center justify-between shadow-soft">
-                  <div className="flex items-center gap-3">
-                    <ShieldCheck className="w-5 h-5 text-text-2" />
-                    <span className="text-sm font-bold text-text">Conexão com a API</span>
-                  </div>
-                  <span className="bg-[#DDF0E4] text-[#2F7D4F] text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    Conectado
-                  </span>
                 </div>
 
                 {/* Botão Trocar Operador */}
