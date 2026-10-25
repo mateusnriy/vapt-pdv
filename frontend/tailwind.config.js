@@ -15,9 +15,11 @@ export default {
         surface: {
           DEFAULT: cor('surface'),
           2: cor('surface-2'),
+          raised: cor('surface-raised'),
         },
         border: {
           DEFAULT: cor('border'),
+          strong: cor('border-strong'),
         },
         text: {
           DEFAULT: cor('text'),

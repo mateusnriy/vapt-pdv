@@ -18,9 +18,10 @@ function obterTemaInicial(): Tema {
 }
 
 function aplicarTema(tema: Tema) {
+  if (typeof document === 'undefined') return;
   document.documentElement.classList.toggle('dark', tema === 'escuro');
   const meta = document.querySelector('meta[name="theme-color"]');
-  meta?.setAttribute('content', tema === 'escuro' ? '#120C09' : '#2B2019');
+  meta?.setAttribute('content', tema === 'escuro' ? '#17120F' : '#2B2019');
 }
 
 interface ThemeState {
@@ -43,5 +44,23 @@ export const useThemeStore = create<ThemeState>((set, get) => ({
   alternarTema: () => get().definirTema(get().tema === 'claro' ? 'escuro' : 'claro'),
 }));
 
-// Aplica o tema salvo assim que o módulo é carregado (evita flash de tema errado)
-aplicarTema(useThemeStore.getState().tema);
+// Aplica o tema salvo assim que o módulo é carregado no navegador (evita flash de tema errado)
+if (typeof window !== 'undefined') {
+  aplicarTema(useThemeStore.getState().tema);
+
+  // Escuta mudanças de preferência do SO quando o usuário ainda não gravou escolha explícita
+  try {
+    const mq = window.matchMedia?.('(prefers-color-scheme: dark)');
+    mq?.addEventListener?.('change', (e) => {
+      try {
+        if (!localStorage.getItem(STORAGE_KEY)) {
+          useThemeStore.getState().definirTema(e.matches ? 'escuro' : 'claro');
+        }
+      } catch {
+        // Ignora erro de acesso ao localStorage
+      }
+    });
+  } catch {
+    // matchMedia não suportado
+  }
+}

@@ -8,14 +8,16 @@
     --c-bg: 251 247 241;
     --c-surface: 255 255 255;
     --c-surface-2: 243 236 225;
+    --c-surface-raised: 255 255 255;
     --c-border: 229 218 203;
+    --c-border-strong: 179 160 141;
     --c-text: 43 32 25;
     --c-text-2: 106 88 73;
     --c-brand: 242 168 29;
     --c-brand-soft: 253 240 210;
     --c-brand-text: 138 82 0;
     --c-brand-hover: 224 154 18;
-    --c-brand-edge: 217 148 20;
+    --c-brand-edge: 168 100 0;
     --c-on-brand: 43 32 25;
     --c-nav: 58 42 33;
     --c-success: 47 125 79;
@@ -38,19 +40,21 @@
 
   /* Tema escuro */
   :root.dark {
-    --c-bg: 26 19 15;
-    --c-surface: 38 28 22;
-    --c-surface-2: 50 38 32;
-    --c-border: 74 58 48;
+    --c-bg: 23 18 15;
+    --c-surface: 36 29 24;
+    --c-surface-2: 46 38 31;
+    --c-surface-raised: 46 38 31;
+    --c-border: 67 52 42;
+    --c-border-strong: 112 88 71;
     --c-text: 246 238 228;
     --c-text-2: 184 166 146;
-    --c-brand: 242 168 29;
-    --c-brand-soft: 74 53 18;
-    --c-brand-text: 245 192 90;
-    --c-brand-hover: 250 186 60;
-    --c-brand-edge: 250 186 60;
+    --c-brand: 245 179 53;
+    --c-brand-soft: 58 43 18;
+    --c-brand-text: 245 179 53;
+    --c-brand-hover: 250 190 77;
+    --c-brand-edge: 245 179 53;
     --c-on-brand: 43 32 25;
-    --c-nav: 18 12 9;
+    --c-nav: 18 14 11;
     --c-success: 76 184 120;
     --c-success-soft: 28 58 41;
     --c-success-text: 127 214 160;

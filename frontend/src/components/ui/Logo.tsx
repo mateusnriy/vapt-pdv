@@ -3,19 +3,25 @@ import React from 'react';
 export interface LogoMarkProps {
   size?: number;
   className?: string;
+  ariaHidden?: boolean;
 }
 
 /**
  * Símbolo do VaptPDV: selo mostarda com um "V" (de Vapt) em traço único
  * e uma moeda no canto superior direito (o "PDV" — ponto de venda).
  */
-export const LogoMark: React.FC<LogoMarkProps> = ({ size = 44, className = '' }) => (
+export const LogoMark: React.FC<LogoMarkProps> = ({
+  size = 44,
+  className = '',
+  ariaHidden = false,
+}) => (
   <svg
     width={size}
     height={size}
     viewBox="0 0 64 64"
-    role="img"
-    aria-label="VaptPDV"
+    role={ariaHidden ? 'presentation' : 'img'}
+    aria-label={ariaHidden ? undefined : 'VaptPDV'}
+    aria-hidden={ariaHidden ? 'true' : undefined}
     className={className}
   >
     <rect width="64" height="64" rx="18" fill="#F2A81D" />
@@ -48,7 +54,7 @@ export const Logo: React.FC<LogoProps> = ({
   className = '',
 }) => (
   <div className={`flex items-center gap-3 select-none ${className}`}>
-    <LogoMark size={size} />
+    <LogoMark size={size} ariaHidden={comNome} />
     {comNome && (
       <span
         className={`font-black tracking-tight leading-none text-2xl ${

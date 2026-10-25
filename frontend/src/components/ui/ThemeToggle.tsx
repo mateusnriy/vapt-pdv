@@ -22,7 +22,7 @@ export const ThemeToggle: React.FC<ThemeToggleProps> = ({ variante = 'pill', cla
       aria-label={`Alternar para ${rotulo.toLowerCase()}`}
       aria-pressed={escuro}
       className={`rounded-full border border-border bg-surface hover:bg-surface-2 text-text flex items-center justify-center gap-2 shadow-soft transition-all active:scale-95 ${
-        variante === 'pill' ? 'px-4 py-2 text-xs font-semibold' : 'w-10 h-10'
+        variante === 'pill' ? 'px-4 py-2 min-h-[44px] text-xs font-semibold' : 'w-11 h-11 min-w-[44px] min-h-[44px]'
       } ${className}`}
     >
       <Icone className="w-4 h-4 text-brand-text" />
