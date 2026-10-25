@@ -1,319 +1,396 @@
-import React, { useState } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
-  Smartphone,
+  Utensils,
   Monitor,
   ChefHat,
-  BarChart3,
-  UserCheck,
+  ChevronRight,
+  Moon,
   UserPlus,
-  ArrowRight,
-  Sparkles,
-  ShieldCheck,
-  Coffee,
+  RefreshCw,
+  AlertCircle,
 } from 'lucide-react';
 import { useUsuariosAtivos, useCriarUsuario } from '../../hooks/useUsuarios';
 import { useSessionStore } from '../../stores/useSessionStore';
-import type { PerfilUsuario, Usuario } from '../../types/api';
-import { Badge } from '../../components/ui/Badge';
+import type { Usuario } from '../../types/api';
 import { Button } from '../../components/ui/Button';
 
-interface PerfilConfig {
-  titulo: string;
-  subtitulo: string;
-  descricao: string;
-  estacao: string;
-  icone: React.ComponentType<{ className?: string }>;
-  badgeColor: 'brand' | 'success' | 'danger' | 'neutral';
-  bgSoft: string;
+const STORAGE_KEY_ULTIMO_ACESSO = 'vapt_pdv_ultimo_acesso';
+
+interface UltimoAcessoStorage {
+  id: number;
+  nome: string;
+  perfil: string;
+  timestamp: string;
 }
 
-const PERFIS_CONFIG: Record<PerfilUsuario, PerfilConfig> = {
-  garcom: {
-    titulo: 'Modo Garçom',
-    subtitulo: 'Salão & PWA Mobile',
-    descricao: 'Abertura de mesas, visualização do salão e envio rápido de pedidos com uma mão.',
-    estacao: 'Smartphones Android / iOS (PWA)',
-    icone: Smartphone,
-    badgeColor: 'success',
-    bgSoft: 'bg-success-soft/40',
-  },
-  caixa: {
-    titulo: 'Modo Caixa',
-    subtitulo: 'Balcão & Pagamento',
-    descricao: 'Conferência de consumo, taxa de serviço de 10%, split payments e baixa de estoque.',
-    estacao: 'Desktop / Widescreen (1440×900)',
-    icone: Monitor,
-    badgeColor: 'brand',
-    bgSoft: 'bg-brand-soft/50',
-  },
-  cozinha: {
-    titulo: 'Painel KDS',
-    subtitulo: 'Display de Produção',
-    descricao: 'Fila cronológica de preparo em 3 colunas (Recebido, Em Preparo, Pronto) com SLA visual.',
-    estacao: 'Monitor / Tablet de Cozinha e Bar',
-    icone: ChefHat,
-    badgeColor: 'danger',
-    bgSoft: 'bg-danger-soft/40',
-  },
-  gerente: {
-    titulo: 'Painel de Gestão',
-    subtitulo: 'Administração & BI',
-    descricao: 'Gestão de cardápio, alerta de estoque mínimo, Curva ABC e métricas de desempenho.',
-    estacao: 'Notebook / Desktop Gerencial',
-    icone: BarChart3,
-    badgeColor: 'neutral',
-    bgSoft: 'bg-surface-2',
-  },
-};
-
-const OPERADORES_DEMO = [
-  { nome: 'Lucas Garçom', perfil: 'garcom' as const },
-  { nome: 'Carla Caixa', perfil: 'caixa' as const },
-  { nome: 'Seu Roberto Cozinha', perfil: 'cozinha' as const },
-  { nome: 'Marcos Gerente', perfil: 'gerente' as const },
-];
-
 export function LoginPage() {
-  const { login, setModo } = useSessionStore();
-  const { data: usuarios, isLoading } = useUsuariosAtivos();
+  const { login } = useSessionStore();
+  const { data: usuarios = [], isLoading, isError, refetch } = useUsuariosAtivos();
   const criarUsuarioMut = useCriarUsuario();
-  const [perfilFiltro, setPerfilFiltro] = useState<PerfilUsuario | 'todos'>('todos');
   const [isSeeding, setIsSeeding] = useState(false);
+  const [ultimoAcesso, setUltimoAcesso] = useState<UltimoAcessoStorage | null>(null);
 
-  const usuariosFiltrados = (usuarios || []).filter(
-    (u) => perfilFiltro === 'todos' || u.perfil === perfilFiltro,
-  );
+  // Carrega o último colaborador que acessou nesta máquina
+  useEffect(() => {
+    try {
+      const salvo = localStorage.getItem(STORAGE_KEY_ULTIMO_ACESSO);
+      if (salvo) {
+        setUltimoAcesso(JSON.parse(salvo));
+      }
+    } catch {
+      // Ignora erro de parsing do localStorage
+    }
+  }, []);
 
-  const handleCadastrarEquipeDemo = async () => {
+  // Extrai as 2 primeiras letras do nome (ex: Lucas -> LU, Ana -> AN, Marina -> MA)
+  const obterIniciais = (nome: string): string => {
+    if (!nome) return '??';
+    const partes = nome.trim().split(/\s+/);
+    if (partes.length >= 2) {
+      return (partes[0][0] + partes[1][0]).toUpperCase();
+    }
+    return partes[0].slice(0, 2).toUpperCase();
+  };
+
+  // Formata o texto amigável do último acesso (ex: "hoje às 18:02")
+  const formatarDataAcesso = (isoString?: string): string => {
+    if (!isoString) return 'recentemente';
+    const data = new Date(isoString);
+    if (isNaN(data.getTime())) return 'recentemente';
+
+    const hoje = new Date();
+    const mesmoDia =
+      data.getDate() === hoje.getDate() &&
+      data.getMonth() === hoje.getMonth() &&
+      data.getFullYear() === hoje.getFullYear();
+
+    const hora = data.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    return mesmoDia ? `hoje às ${hora}` : `${data.toLocaleDateString('pt-BR')} às ${hora}`;
+  };
+
+  // Agrupamento dos colaboradores ativos por perfil real vindo do banco
+  const garcons = useMemo(() => usuarios.filter((u) => u.perfil === 'garcom'), [usuarios]);
+  const caixas = useMemo(() => usuarios.filter((u) => u.perfil === 'caixa'), [usuarios]);
+  const gerentes = useMemo(() => usuarios.filter((u) => u.perfil === 'gerente'), [usuarios]);
+
+  // Colaborador em destaque para "Último acesso"
+  // Prioriza quem foi salvo no localStorage, ou o primeiro garçom/caixa ativo retornado pelo banco
+  const operadorDestaque = useMemo(() => {
+    if (ultimoAcesso) {
+      const match = usuarios.find((u) => u.id === ultimoAcesso.id);
+      if (match) {
+        return {
+          usuario: match,
+          tempoTexto: formatarDataAcesso(ultimoAcesso.timestamp),
+        };
+      }
+    }
+    if (garcons.length > 0) {
+      return {
+        usuario: garcons[0],
+        tempoTexto: 'turno disponível',
+      };
+    }
+    if (caixas.length > 0) {
+      return {
+        usuario: caixas[0],
+        tempoTexto: 'turno disponível',
+      };
+    }
+    return null;
+  }, [ultimoAcesso, usuarios, garcons, caixas]);
+
+  const handleEntrarComUsuario = (usuario: Usuario) => {
+    try {
+      const registro: UltimoAcessoStorage = {
+        id: usuario.id,
+        nome: usuario.nome,
+        perfil: usuario.perfil,
+        timestamp: new Date().toISOString(),
+      };
+      localStorage.setItem(STORAGE_KEY_ULTIMO_ACESSO, JSON.stringify(registro));
+    } catch {
+      // Ignora erro de gravação
+    }
+    login(usuario);
+  };
+
+  // Criação inicial no PostgreSQL caso o banco esteja vazio
+  const handleCriarOperadoresIniciais = async () => {
     setIsSeeding(true);
     try {
-      for (const op of OPERADORES_DEMO) {
-        await criarUsuarioMut.mutateAsync(op);
-      }
+      await criarUsuarioMut.mutateAsync({ nome: 'Lucas', perfil: 'garcom' });
+      await criarUsuarioMut.mutateAsync({ nome: 'Ana', perfil: 'garcom' });
+      await criarUsuarioMut.mutateAsync({ nome: 'Rodrigo', perfil: 'garcom' });
+      await criarUsuarioMut.mutateAsync({ nome: 'Marina', perfil: 'caixa' });
+      await refetch();
     } finally {
       setIsSeeding(false);
     }
   };
 
-  const handleEntrarDireto = (perfil: PerfilUsuario) => {
-    // Busca o primeiro usuário cadastrado daquele perfil ou cria uma sessão transitória
-    const usuarioExistente = usuarios?.find((u) => u.perfil === perfil);
-    if (usuarioExistente) {
-      login(usuarioExistente);
-    } else {
-      const mock: Usuario = {
-        id: 99,
-        nome: `${PERFIS_CONFIG[perfil].titulo} Demo`,
-        perfil,
-        ativo: true,
-        criado_em: new Date().toISOString(),
-        atualizado_em: new Date().toISOString(),
-      };
-      login(mock);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-bg text-text flex flex-col justify-between p-4 sm:p-8">
-      {/* Topo / Marca */}
-      <header className="max-w-6xl mx-auto w-full flex items-center justify-between py-4 border-b border-border">
-        <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-card bg-brand text-on-brand flex items-center justify-center font-black text-2xl shadow-soft">
+    <div className="min-h-screen bg-bg text-text flex flex-col md:flex-row font-sans selection:bg-brand selection:text-on-brand">
+      {/* ─────────────────────────────────────────────────────────────
+          SIDEBAR ESQUERDA (DESKTOP) — Fiel a X01 Login operacional.png
+          ───────────────────────────────────────────────────────────── */}
+      <aside className="hidden md:flex w-[340px] lg:w-[380px] bg-nav text-white flex-col justify-between p-8 lg:p-10 shrink-0 select-none border-r border-[#43342A]">
+        <div>
+          {/* Logo V Mostarda */}
+          <div className="w-12 h-12 rounded-[14px] bg-brand text-on-brand flex items-center justify-center font-black text-2xl shadow-soft">
             V
           </div>
-          <div>
-            <h1 className="text-xl font-black tracking-tight flex items-center gap-2">
-              VaptPDV
-              <span className="text-[10px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full bg-brand-soft text-brand-text border border-brand/20">
-                Food Service OS
-              </span>
-            </h1>
-            <p className="text-xs text-text-2">Sistema Operacional para Bares e Lanchonetes</p>
+
+          <h1 className="text-white font-extrabold text-2xl lg:text-3xl tracking-tight mt-6 mb-2">
+            VaptPDV Bar
+          </h1>
+          <p className="text-[#C9B8A6] text-xs lg:text-sm leading-relaxed mb-10">
+            Salão, caixa e cozinha no mesmo ritmo.
+          </p>
+
+          {/* Lista de Recursos com Ícones Lineares */}
+          <div className="space-y-4 text-xs lg:text-sm text-[#F6EEE4] font-medium">
+            <div className="flex items-center gap-3">
+              <Utensils className="w-4 h-4 text-[#C9B8A6] shrink-0" />
+              <span>Garçom no celular</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <Monitor className="w-4 h-4 text-[#C9B8A6] shrink-0" />
+              <span>Caixa no balcão</span>
+            </div>
+            <div className="flex items-center gap-3">
+              <ChefHat className="w-4 h-4 text-[#C9B8A6] shrink-0" />
+              <span>KDS na cozinha e no bar</span>
+            </div>
           </div>
         </div>
 
-        <button
-          onClick={() => setModo('design')}
-          className="text-xs font-bold text-text-2 hover:text-text px-3 py-1.5 rounded-full hover:bg-surface-2 transition-colors flex items-center gap-1.5"
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">Design System & API</span>
-        </button>
+        {/* Rodapé da Sidebar */}
+        <div className="text-[11px] text-[#C9B8A6]/70 border-t border-[#43342A] pt-4">
+          <span>VaptPDV · Sistemas Distribuídos</span>
+        </div>
+      </aside>
+
+      {/* ─────────────────────────────────────────────────────────────
+          HEADER COMPACTO (MOBILE) — Fiel a X01 Login (celular).png
+          ───────────────────────────────────────────────────────────── */}
+      <header className="md:hidden flex items-center gap-3 p-5 pb-2">
+        <div className="w-11 h-11 rounded-[14px] bg-brand text-on-brand flex items-center justify-center font-black text-xl shadow-soft shrink-0">
+          V
+        </div>
+        <div>
+          <h1 className="font-extrabold text-lg text-text tracking-tight leading-tight">
+            VaptPDV Bar
+          </h1>
+          <p className="text-xs text-text-2">Acesso Operacional</p>
+        </div>
       </header>
 
-      {/* Conteúdo Central */}
-      <main className="max-w-6xl mx-auto w-full my-8">
-        <div className="text-center max-w-2xl mx-auto mb-8 sm:mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface border border-border text-xs font-semibold text-text-2 mb-3 shadow-soft">
-            <ShieldCheck className="w-3.5 h-3.5 text-success" />
-            <span>Turno Operacional · Sem atrito de senhas</span>
+      {/* ─────────────────────────────────────────────────────────────
+          ÁREA PRINCIPAL DIREITA — Seleção de Operador
+          ───────────────────────────────────────────────────────────── */}
+      <main className="flex-1 bg-bg p-5 sm:p-8 lg:p-12 overflow-y-auto flex flex-col justify-between">
+        <div className="max-w-3xl w-full">
+          {/* Título da Tela */}
+          <div className="mb-6 sm:mb-8">
+            <h2 className="text-2xl sm:text-3xl font-extrabold text-text tracking-tight">
+              Quem está entrando?
+            </h2>
+            <p className="text-xs sm:text-sm text-text-2 mt-1">
+              Escolha seu perfil para abrir o turno.
+            </p>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-text">
-            Selecione sua estação de trabalho
-          </h2>
-          <p className="text-sm text-text-2 mt-2">
-            Escolha o colaborador ou perfil para ser direcionado automaticamente à interface
-            especializada do seu posto de atendimento.
-          </p>
-        </div>
 
-        {/* 4 Cards das Estações Operacionais */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-10">
-          {(Object.keys(PERFIS_CONFIG) as PerfilUsuario[]).map((perfil) => {
-            const config = PERFIS_CONFIG[perfil];
-            const Icone = config.icone;
-            const operadoresDoPerfil = (usuarios || []).filter((u) => u.perfil === perfil);
-
-            return (
-              <div
-                key={perfil}
-                className="group relative bg-surface border border-border hover:border-brand rounded-card-lg p-5 flex flex-col justify-between transition-all duration-200 hover:shadow-card cursor-pointer"
-                onClick={() => handleEntrarDireto(perfil)}
-              >
-                <div>
-                  <div className="flex items-start justify-between mb-4">
-                    <div
-                      className={`w-12 h-12 rounded-input ${config.bgSoft} flex items-center justify-center text-text transition-transform group-hover:scale-105`}
-                    >
-                      <Icone className="w-6 h-6" />
-                    </div>
-                    <Badge variant={config.badgeColor}>{config.subtitulo}</Badge>
-                  </div>
-
-                  <h3 className="font-extrabold text-lg text-text group-hover:text-brand-text transition-colors">
-                    {config.titulo}
-                  </h3>
-                  <p className="text-xs text-text-2 mt-1 leading-relaxed">{config.descricao}</p>
-                </div>
-
-                <div className="mt-6 pt-4 border-t border-border/60">
-                  <div className="text-[11px] font-semibold text-text-2 mb-2 flex items-center justify-between">
-                    <span>{config.estacao}</span>
-                    <span className="font-bold tabular-nums">
-                      {operadoresDoPerfil.length}{' '}
-                      {operadoresDoPerfil.length === 1 ? 'operador' : 'operadores'}
-                    </span>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-btn text-xs font-bold bg-surface-2 group-hover:bg-brand group-hover:text-on-brand transition-all text-text"
-                  >
-                    <span>Acessar Estação</span>
-                    <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
-                  </button>
-                </div>
+          {/* Estado de Carregamento Skeleton */}
+          {isLoading && (
+            <div className="space-y-4 animate-pulse">
+              <div className="h-4 w-28 bg-surface-2 rounded" />
+              <div className="h-20 bg-surface rounded-[20px] border border-border" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-4">
+                <div className="h-16 bg-surface rounded-[16px] border border-border" />
+                <div className="h-16 bg-surface rounded-[16px] border border-border" />
               </div>
-            );
-          })}
-        </div>
+            </div>
+          )}
 
-        {/* Seção de Colaboradores Cadastrados */}
-        <div className="bg-surface border border-border rounded-card-lg p-6 shadow-soft">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-border">
-            <div>
-              <h3 className="font-extrabold text-base text-text flex items-center gap-2">
-                <UserCheck className="w-4 h-4 text-brand" />
-                Colaboradores em Atividade
+          {/* Erro de Conexão com a API */}
+          {isError && !isLoading && (
+            <div className="p-6 rounded-[20px] bg-danger-soft border border-danger/30 text-center mb-6">
+              <AlertCircle className="w-8 h-8 text-danger mx-auto mb-2" />
+              <h3 className="font-bold text-sm text-danger-text">
+                Não foi possível conectar ao servidor
               </h3>
-              <p className="text-xs text-text-2">
-                Clique no seu nome para assumir o turno com registro auditável de comissões e vendas.
+              <p className="text-xs text-danger-text/80 mt-1 mb-4">
+                Verifique se o backend Fastify e o PostgreSQL estão em execução na porta 3000.
               </p>
+              <Button variant="secondary" size="sm" onClick={() => refetch()}>
+                <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
+                Tentar novamente
+              </Button>
             </div>
+          )}
 
-            {/* Filtro por Perfil */}
-            <div className="flex items-center gap-1.5 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
-              <button
-                onClick={() => setPerfilFiltro('todos')}
-                className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all ${
-                  perfilFiltro === 'todos'
-                    ? 'bg-brand text-on-brand shadow-soft'
-                    : 'bg-surface-2 text-text-2 hover:bg-border'
-                }`}
+          {/* Banco Vazio: Convite para Criar Operadores Iniciais */}
+          {!isLoading && !isError && usuarios.length === 0 && (
+            <div className="p-8 rounded-[20px] bg-surface border border-border text-center shadow-soft my-6">
+              <div className="w-12 h-12 rounded-full bg-brand-soft text-brand-text flex items-center justify-center mx-auto mb-3">
+                <UserPlus className="w-6 h-6" />
+              </div>
+              <h3 className="font-extrabold text-base text-text">
+                Nenhum colaborador cadastrado no banco
+              </h3>
+              <p className="text-xs text-text-2 max-w-md mx-auto mt-1 mb-6">
+                Para começar a operar o restaurante, cadastre os colaboradores da equipe no banco de
+                dados PostgreSQL com um clique.
+              </p>
+              <Button
+                variant="primary"
+                onClick={handleCriarOperadoresIniciais}
+                disabled={isSeeding}
               >
-                Todos
-              </button>
-              {(Object.keys(PERFIS_CONFIG) as PerfilUsuario[]).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => setPerfilFiltro(p)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-bold transition-all capitalize ${
-                    perfilFiltro === p
-                      ? 'bg-brand text-on-brand shadow-soft'
-                      : 'bg-surface-2 text-text-2 hover:bg-border'
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
+                <UserPlus className="w-4 h-4 mr-2" />
+                {isSeeding ? 'Gravando no banco PostgreSQL...' : 'Criar Operadores Iniciais no Banco'}
+              </Button>
             </div>
-          </div>
+          )}
 
-          {/* Lista de Colaboradores */}
-          <div className="mt-5">
-            {isLoading ? (
-              <div className="py-8 text-center text-xs text-text-2 animate-pulse">
-                Carregando operadores ativos da equipe...
-              </div>
-            ) : usuariosFiltrados.length === 0 ? (
-              <div className="py-10 text-center">
-                <Coffee className="w-10 h-10 text-border mx-auto mb-2" />
-                <p className="text-sm font-bold text-text">Nenhum operador cadastrado ainda.</p>
-                <p className="text-xs text-text-2 max-w-md mx-auto mt-1 mb-4">
-                  Para começar a operar o restaurante, cadastre os colaboradores padrão da equipe com
-                  um clique abaixo.
-                </p>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={handleCadastrarEquipeDemo}
-                  disabled={isSeeding}
-                >
-                  <UserPlus className="w-4 h-4 mr-2" />
-                  {isSeeding ? 'Cadastrando equipe...' : 'Cadastrar Equipe Inicial (Demo)'}
-                </Button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {usuariosFiltrados.map((usuario) => {
-                  const config = PERFIS_CONFIG[usuario.perfil];
-                  const Icone = config.icone;
-
-                  return (
-                    <button
-                      key={usuario.id}
-                      onClick={() => login(usuario)}
-                      className="group flex items-center justify-between p-3.5 rounded-card bg-surface-2 hover:bg-brand hover:text-on-brand transition-all text-left border border-transparent hover:border-brand shadow-soft"
-                    >
-                      <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-9 h-9 rounded-input bg-surface text-text flex items-center justify-center font-bold text-xs shrink-0 shadow-soft">
-                          <Icone className="w-4 h-4 text-text-2 group-hover:text-text" />
+          {/* Conteúdo Real com Colaboradores */}
+          {!isLoading && !isError && usuarios.length > 0 && (
+            <div className="space-y-8">
+              {/* Card Herói: Último Acesso (com borda mostarda #F2A81D) */}
+              {operadorDestaque && (
+                <div>
+                  <div className="text-xs font-bold text-text-2 mb-2">Último acesso</div>
+                  <div
+                    onClick={() => handleEntrarComUsuario(operadorDestaque.usuario)}
+                    className="group bg-surface border-2 border-brand rounded-[20px] p-4 sm:p-5 flex items-center justify-between shadow-soft hover:shadow-card transition-all cursor-pointer active:scale-[0.99]"
+                  >
+                    <div className="flex items-center gap-3.5 sm:gap-4 min-w-0">
+                      {/* Avatar Circular com Iniciais */}
+                      <div className="w-12 h-12 rounded-full bg-brand-soft text-brand-text font-black text-base flex items-center justify-center shrink-0 shadow-soft">
+                        {obterIniciais(operadorDestaque.usuario.nome)}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="font-extrabold text-base text-text group-hover:text-brand-text transition-colors truncate">
+                          {operadorDestaque.usuario.nome}
                         </div>
-                        <div className="min-w-0">
-                          <div className="text-sm font-extrabold truncate text-text group-hover:text-on-brand">
-                            {usuario.nome}
-                          </div>
-                          <div className="text-[11px] text-text-2 group-hover:text-on-brand/80 capitalize">
-                            {usuario.perfil}
-                          </div>
+                        <div className="text-xs text-text-2 mt-0.5 capitalize">
+                          {operadorDestaque.usuario.perfil} · {operadorDestaque.tempoTexto}
                         </div>
                       </div>
+                    </div>
 
-                      <ArrowRight className="w-4 h-4 shrink-0 text-text-2 group-hover:text-on-brand group-hover:translate-x-0.5 transition-transform ml-2" />
-                    </button>
-                  );
-                })}
+                    {/* Botão Entrar > (Desktop) ou Chevron (Mobile) */}
+                    <div className="shrink-0 ml-3">
+                      <div className="hidden sm:flex items-center gap-2 px-5 py-2.5 rounded-full bg-brand hover:bg-brand-hover text-on-brand font-extrabold text-xs shadow-soft transition-all group-hover:scale-105">
+                        <span>Entrar</span>
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </div>
+                      <ChevronRight className="w-5 h-5 text-text-2 group-hover:text-brand-text sm:hidden transition-transform group-hover:translate-x-0.5" />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Seções por Perfil Real do Banco */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Coluna 1: Garçons */}
+                {garcons.length > 0 && (
+                  <div>
+                    <div className="text-xs font-bold text-text-2 mb-3">Garçons</div>
+                    <div className="space-y-2.5">
+                      {garcons.map((garcom) => (
+                        <button
+                          key={garcom.id}
+                          type="button"
+                          onClick={() => handleEntrarComUsuario(garcom)}
+                          className="w-full bg-surface border border-border hover:border-brand rounded-[16px] p-3.5 flex items-center justify-between shadow-soft hover:shadow-card transition-all text-left group active:scale-[0.98]"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-full bg-[#FDF0D2] text-[#8A5200] font-black text-xs flex items-center justify-center shrink-0">
+                              {obterIniciais(garcom.nome)}
+                            </div>
+                            <span className="font-bold text-sm text-text truncate group-hover:text-brand-text transition-colors">
+                              {garcom.nome}
+                            </span>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-text-2 group-hover:text-brand-text group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Coluna 2: Caixa */}
+                {caixas.length > 0 && (
+                  <div>
+                    <div className="text-xs font-bold text-text-2 mb-3">Caixa</div>
+                    <div className="space-y-2.5">
+                      {caixas.map((caixa) => (
+                        <button
+                          key={caixa.id}
+                          type="button"
+                          onClick={() => handleEntrarComUsuario(caixa)}
+                          className="w-full bg-surface border border-border hover:border-brand rounded-[16px] p-3.5 flex items-center justify-between shadow-soft hover:shadow-card transition-all text-left group active:scale-[0.98]"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-full bg-[#FDF0D2] text-[#8A5200] font-black text-xs flex items-center justify-center shrink-0">
+                              {obterIniciais(caixa.nome)}
+                            </div>
+                            <span className="font-bold text-sm text-text truncate group-hover:text-brand-text transition-colors">
+                              {caixa.nome}
+                            </span>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-text-2 group-hover:text-brand-text group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Coluna 3: Gerência (se houver no banco) */}
+                {gerentes.length > 0 && (
+                  <div>
+                    <div className="text-xs font-bold text-text-2 mb-3">Gerência</div>
+                    <div className="space-y-2.5">
+                      {gerentes.map((gerente) => (
+                        <button
+                          key={gerente.id}
+                          type="button"
+                          onClick={() => handleEntrarComUsuario(gerente)}
+                          className="w-full bg-surface border border-border hover:border-brand rounded-[16px] p-3.5 flex items-center justify-between shadow-soft hover:shadow-card transition-all text-left group active:scale-[0.98]"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="w-10 h-10 rounded-full bg-[#FDF0D2] text-[#8A5200] font-black text-xs flex items-center justify-center shrink-0">
+                              {obterIniciais(gerente.nome)}
+                            </div>
+                            <span className="font-bold text-sm text-text truncate group-hover:text-brand-text transition-colors">
+                              {gerente.nome}
+                            </span>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-text-2 group-hover:text-brand-text group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </div>
+          )}
+        </div>
+
+        {/* Barra Inferior com Botão Tema — Fiel ao rodapé direito de X01 */}
+        <div className="pt-8 flex justify-end">
+          <button
+            type="button"
+            className="px-4 py-2 rounded-full border border-border bg-surface hover:bg-surface-2 text-xs font-semibold text-text flex items-center gap-2 shadow-soft transition-all"
+            title="Alternar tema visual"
+          >
+            <Moon className="w-3.5 h-3.5 text-text-2" />
+            <span>Tema</span>
+          </button>
         </div>
       </main>
-
-      {/* Rodapé */}
-      <footer className="max-w-6xl mx-auto w-full pt-4 pb-2 border-t border-border flex flex-col sm:flex-row items-center justify-between text-xs text-text-2 gap-2">
-        <span>VaptPDV · Ponto de Venda Distribuído para Bares e Lanchonetes</span>
-        <span>Sistemas Distribuídos · DCC/UERN</span>
-      </footer>
     </div>
   );
 }
