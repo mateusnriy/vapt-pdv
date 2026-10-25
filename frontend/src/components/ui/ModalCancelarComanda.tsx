@@ -43,7 +43,7 @@ export const ModalCancelarComanda: React.FC<ModalCancelarComandaProps> = ({
       >
         <div className="flex items-start gap-3 p-3.5 rounded-input bg-danger-soft border border-danger/30">
           <AlertTriangle className="w-5 h-5 text-danger shrink-0 mt-0.5" />
-          <p className="text-xs text-danger-text leading-relaxed">
+          <p id="cancelar-comanda-aviso" className="text-xs text-danger-text leading-relaxed">
             {mesa ? `A comanda da Mesa ${mesa} será` : 'A comanda será'} cancelada e a mesa será
             liberada. Os itens lançados não serão cobrados e não terão baixa de estoque. Esta ação
             não pode ser desfeita.
@@ -59,10 +59,12 @@ export const ModalCancelarComanda: React.FC<ModalCancelarComandaProps> = ({
             type="text"
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
+            disabled={isLoading}
             autoFocus
             autoComplete="off"
+            aria-describedby="cancelar-comanda-aviso"
             placeholder={FRASE_CANCELAMENTO}
-            className="w-full min-h-[44px] px-3.5 py-2.5 rounded-input bg-surface border border-border text-text text-sm font-medium focus:outline-none focus:border-danger focus:ring-1 focus:ring-danger"
+            className="w-full min-h-[44px] px-3.5 py-2.5 rounded-input bg-surface border border-border text-text text-sm font-medium focus:outline-none focus:border-danger focus:ring-1 focus:ring-danger disabled:opacity-60 disabled:cursor-not-allowed"
           />
         </div>
 
