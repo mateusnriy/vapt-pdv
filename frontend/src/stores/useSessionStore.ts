@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import type { PerfilUsuario, Usuario } from '../types/api';
 
-export type ModoOperacao = 'login' | 'garcom' | 'caixa' | 'gerente' | 'cozinha' | 'design';
+export type ModoOperacao = 'login' | 'garcom' | 'caixa';
 
 interface SessionState {
   modo: ModoOperacao;
@@ -29,19 +29,18 @@ export const useSessionStore = create<SessionState>((set) => ({
       perfilAtivo: perfil || state.perfilAtivo,
     })),
   login: (usuario) => {
-    // Mapeamento automático do perfil para a rota/modo operacional
-    const modoPorPerfil: Record<PerfilUsuario, ModoOperacao> = {
+    // Mapeamento exclusivo para os módulos operacionais com suporte ativo no backend
+    const modoPorPerfil: Partial<Record<PerfilUsuario, ModoOperacao>> = {
       garcom: 'garcom',
       caixa: 'caixa',
-      gerente: 'gerente',
-      cozinha: 'cozinha',
     };
+    const modoDestino = modoPorPerfil[usuario.perfil] || 'login';
     set({
       usuarioAtivo: usuario,
       usuarioAtivoId: usuario.id,
       nomeOperador: usuario.nome,
       perfilAtivo: usuario.perfil,
-      modo: modoPorPerfil[usuario.perfil] || 'garcom',
+      modo: modoDestino,
     });
   },
   logout: () =>
