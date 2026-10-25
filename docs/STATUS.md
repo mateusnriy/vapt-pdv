@@ -2,17 +2,18 @@
 
 > **Propósito:** Ponto único de retomada para qualquer desenvolvedor ou agente de IA ao abrir o repositório em outra máquina ou nova sessão. Atualize este arquivo e `_bmad-output/implementation-artifacts/sprint-status.yaml` sempre que uma story mudar de estado.
 
-**Última atualização:** 2026-10-24  
+**Última atualização:** 2026-10-25  
 **Módulo atual:** Módulo 1 — Computação em Nuvem (`entrega-1-cloud`) — **CONCLUÍDO (`done`)**  
 **Próximo Passo:** Homologação na AWS EC2 pelos discentes, gravação do vídeo demonstrativo e criação da tag `entrega-1-cloud`.  
 **Status do Épico 1:** 
-- **Backend Fastify/Prisma:** 100% implementado e testado com **143 testes automatizados passando verde** (Stories 1 a 9 e 13 concluídas). Servindo estáticos compilados com fallback SPA para `/caixa`, `/garcom`, `/kds`, `/gestao`, `/login`.
-- **Frontend Web/PWA:** 100% implementado e testado em `frontend/` com React 19, TypeScript, Vite, Tailwind CSS, TanStack Query e Zustand (alinhado a `DESIGN.md` e escopo de produto comercial v3.0.0):
+- **Backend Fastify/Prisma:** 100% implementado e testado com **143 testes automatizados passando verde** (Stories 1 a 9 e 13 concluídas). Servindo estáticos compilados com fallback SPA para `/caixa`, `/garcom`, `/login`. Script de seed de produtos (`backend/prisma/seed-produtos.sql`) com 24 itens reais e carga idempotente.
+- **Frontend Web/PWA:** 100% implementado, auditado via code review multi-camadas (Acceptance Auditor, Blind Hunter, Edge Case Hunter e Verification Gap) e testado em `frontend/` com React 19, TypeScript, Vite, Tailwind CSS, TanStack Query e Zustand (alinhado a `DESIGN.md` e WCAG 2.2 AA):
   - Story 10 (Setup, Tailwind, PWA, Lucide e Componentes Atômicos): `done`
   - Story 11 (API Client com TanStack Query e Zustand): `done`
-  - Story 12 (Modo Garçom PWA - Salão, Comanda da Mesa e Cardápio Mobile): `done`
-  - Tela de Login Operacional (`/login`) com despacho automático por perfil (`garcom`, `caixa`, `cozinha`, `gerente`), KDS e Gestão: `done`
-  - Story 13 (Modo Caixa / Balcão e Fechamento/Pagamento Desktop 1440x900): `done`
+  - Story 12 (Modo Garçom PWA - Salão, Comanda da Mesa com dupla validação de cancelamento e Cardápio Mobile): `done`
+  - Tela de Login Operacional (`/login`) com alternância de tema e despacho por perfil: `done`
+  - Story 13 (Modo Caixa / Balcão com painel recolhível, fechamento com taxa, recebimento e impressão de recibo): `done`
+  - Design System & Brand: Logo VaptPDV SVG integrado, suporte completo a modo claro/escuro (`useThemeStore` com persistência e media query do sistema), tokens semânticos e área de toque acessível (>= 44px).
 - **Infraestrutura AWS EC2:** Provisionada com sucesso pelos discentes.
 
 ---
