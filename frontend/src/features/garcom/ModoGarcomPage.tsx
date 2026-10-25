@@ -1,25 +1,22 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  Utensils,
-  Plus,
-  CheckCircle,
-  Wifi,
-  WifiOff,
-  Receipt,
   LayoutGrid,
-  ChefHat,
+  Receipt,
   User,
+  CheckCircle2,
+  AlertCircle,
+  ShieldCheck,
   LogOut,
+  Users,
 } from 'lucide-react';
 import { MesasGrid } from './components/MesasGrid';
 import { ModalAbrirMesa } from './components/ModalAbrirMesa';
 import { ComandaMesaView } from './components/ComandaMesaView';
-import { CardapioModal } from './components/CardapioModal';
-import { Badge } from '../../components/ui/Badge';
 import { useComandasSalao } from '../../hooks/useComandas';
 import { useGarconsAtivos } from '../../hooks/useUsuarios';
 import { useSessionStore } from '../../stores/useSessionStore';
 import { useComandaStore } from '../../stores/useComandaStore';
+import { formatCurrency, formatElapsedTime } from '../../lib/utils';
 import type { Comanda } from '../../types/api';
 
 export interface ModoGarcomPageProps {
@@ -30,19 +27,22 @@ export const ModoGarcomPage: React.FC<ModoGarcomPageProps> = ({
   apiHealth = 'online',
 }) => {
   const { usuarioAtivoId, nomeOperador, setUsuarioAtivo, logout, setModo } = useSessionStore();
-  const {
-    mesaAtiva,
-    comandaAtivaId,
-    setMesaAtiva,
-    setComandaAtivaId,
-  } = useComandaStore();
+  const { comandaAtivaId, setComandaAtivaId, setMesaAtiva } = useComandaStore();
 
-  const [telaAtiva, setTelaAtiva] = useState<'mesas' | 'comanda'>('mesas');
+  // Abas da barra inferior: 'salao' | 'comandas' | 'perfil'
+  const [abaInferior, setAbaInferior] = useState<'salao' | 'comandas' | 'perfil'>('salao');
+
+  // Controle de exibição da comanda ativa detalhada
+  const [visualizandoComanda, setVisualizandoComanda] = useState<boolean>(false);
+
+  // Modal para abrir mesa
   const [isModalAbrirOpen, setIsModalAbrirOpen] = useState(false);
   const [mesaParaAbrir, setMesaParaAbrir] = useState<string>('');
-  const [isCardapioOpen, setIsCardapioOpen] = useState(false);
 
-  // Toast Feedback local
+  // Filtro na aba Comandas (G07): 'minhas' | 'todas'
+  const [filtroComandas, setFiltroComandas] = useState<'minhas' | 'todas'>('minhas');
+
+  // Feedback Toast
   const [toast, setToast] = useState<{
     tipo: 'sucesso' | 'erro';
     mensagem: string;
@@ -53,226 +53,314 @@ export const ModoGarcomPage: React.FC<ModoGarcomPageProps> = ({
     setTimeout(() => setToast(null), 4000);
   };
 
-  // Queries TanStack Query
+  // Queries TanStack Query reais
   const { data: comandas = [], refetch: refetchComandas } = useComandasSalao();
   const { data: garcons = [] } = useGarconsAtivos();
 
-  // Garante um garçom padrão se nenhum estiver selecionado
-  React.useEffect(() => {
-    if (garcons.length > 0 && !usuarioAtivoId) {
-      setUsuarioAtivo(garcons[0].id, garcons[0].nome);
+  // Seleciona automaticamente o garçom logado se necessário
+  useEffect(() => {
+    if (!usuarioAtivoId && garcons.length > 0) {
+      setUsuarioAtivo(garcons[0].id, garcons[0].nome, 'garcom');
     }
-  }, [garcons, usuarioAtivoId, setUsuarioAtivo]);
+  }, [usuarioAtivoId, garcons, setUsuarioAtivo]);
 
-  // Se uma comanda já estiver ativa e o usuário selecionar a aba comanda
-  const handleVerComanda = (comanda: Comanda) => {
-    setComandaAtivaId(comanda.id);
-    setMesaAtiva(comanda.mesa);
-    setTelaAtiva('comanda');
-  };
-
-  const handleAbrirMesaClick = (numeroMesa: string) => {
+  // Abertura de Mesa
+  const handleAbrirMesa = (numeroMesa: string) => {
     setMesaParaAbrir(numeroMesa);
     setIsModalAbrirOpen(true);
   };
 
-  const handleMesaAbertaSucesso = (comanda: Comanda) => {
-    showToast('sucesso', `Mesa ${comanda.mesa} aberta com sucesso!`);
+  // Ao abrir mesa com sucesso na API Fastify
+  const handleMesaAbertaComSucesso = (novaComanda: Comanda) => {
+    setIsModalAbrirOpen(false);
+    setMesaAtiva(novaComanda.mesa);
+    setComandaAtivaId(novaComanda.id);
+    setVisualizandoComanda(true);
     refetchComandas();
-    setComandaAtivaId(comanda.id);
-    setMesaAtiva(comanda.mesa);
-    setTelaAtiva('comanda');
+    showToast('sucesso', `Mesa ${novaComanda.mesa} aberta com sucesso!`);
   };
 
-  const garcomAtivoNome =
-    garcons.find((g) => g.id === usuarioAtivoId)?.nome || nomeOperador || 'Garçom';
+  // Ao clicar em uma mesa com comanda aberta
+  const handleVerComanda = (comanda: Comanda) => {
+    setMesaAtiva(comanda.mesa);
+    setComandaAtivaId(comanda.id);
+    setVisualizandoComanda(true);
+  };
+
+  // Comandas ativas filtradas para a aba "Comandas" (G07)
+  const comandasAtivas = comandas.filter(
+    (c) => c.status === 'aberta' || c.status === 'fechada',
+  );
+
+  const comandasExibidas = comandasAtivas.filter((c) => {
+    if (filtroComandas === 'todas') return true;
+    if (usuarioAtivoId) return c.garcom_id === usuarioAtivoId;
+    return true;
+  });
 
   return (
-    <div className="w-full max-w-md mx-auto min-h-screen flex flex-col bg-bg text-text relative selection:bg-brand selection:text-on-brand">
-      {/* Toast Flutuante */}
+    <div className="min-h-screen bg-bg text-text flex flex-col font-sans selection:bg-brand selection:text-on-brand pb-16">
+      {/* Toast Flutuante de Feedback */}
       {toast && (
-        <div className="fixed top-3 left-4 right-4 z-50 animate-bounce">
+        <div className="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 z-50 animate-bounce max-w-sm">
           <div
-            className={`max-w-md mx-auto px-4 py-3 rounded-card shadow-modal border flex items-center gap-2 text-xs font-bold ${
+            className={`flex items-center gap-2.5 px-4 py-3 rounded-[16px] shadow-modal border text-xs font-bold ${
               toast.tipo === 'sucesso'
-                ? 'bg-success text-on-brand border-success'
-                : 'bg-danger text-on-brand border-danger'
+                ? 'bg-success text-white border-success'
+                : 'bg-danger text-white border-danger'
             }`}
           >
-            <CheckCircle className="w-4 h-4 shrink-0" />
+            {toast.tipo === 'sucesso' ? (
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+            ) : (
+              <AlertCircle className="w-4 h-4 shrink-0" />
+            )}
             <span>{toast.mensagem}</span>
           </div>
         </div>
       )}
 
-      {/* Barra de Status e Cabeçalho do Salão (Ergonomia Mobile) */}
-      <header className="p-3 bg-surface border-b border-border shadow-soft flex items-center justify-between shrink-0 sticky top-0 z-20">
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-full bg-brand text-on-brand flex items-center justify-center font-black text-xs shadow-soft select-none">
-            {garcomAtivoNome.slice(0, 2).toUpperCase()}
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <h1 className="text-sm font-black text-text leading-none">Salão</h1>
-              <span className="text-[10px] text-text-2 font-bold uppercase tracking-wider">
-                · Modo Garçom PWA
-              </span>
-            </div>
-            <span className="text-xs font-semibold text-text-2 truncate block max-w-[150px]">
-              {garcomAtivoNome}
-            </span>
-          </div>
-        </div>
-
-        {/* Indicador de Conexão com a API e Troca de Operador */}
-        <div className="flex items-center gap-2">
-          {apiHealth === 'online' ? (
-            <Badge variant="livre" size="sm" icon={<Wifi className="w-3 h-3 text-success" />}>
-              Online
-            </Badge>
-          ) : (
-            <Badge variant="conta_pedida" size="sm" icon={<WifiOff className="w-3 h-3 text-danger" />}>
-              Offline
-            </Badge>
-          )}
-
-          <button
-            type="button"
-            onClick={logout}
-            title="Trocar Operador"
-            className="p-1.5 rounded-full hover:bg-surface-2 text-text-2 hover:text-danger transition-colors flex items-center gap-1 text-[11px] font-bold"
-          >
-            <LogOut className="w-4 h-4 text-danger" />
-          </button>
-        </div>
-      </header>
-
-      {/* Conteúdo Principal Alternado por Tela */}
-      <main className="flex-1 p-3">
-        {telaAtiva === 'mesas' ? (
-          <MesasGrid
-            comandas={comandas}
-            garcomLogadoId={usuarioAtivoId}
-            garcons={garcons}
-            mesaSelecionadaId={comandaAtivaId}
-            onAbrirMesa={handleAbrirMesaClick}
-            onVerComanda={handleVerComanda}
-          />
-        ) : comandaAtivaId ? (
+      {/* Conteúdo Principal (Container Mobile 390-440px centralizado em telas maiores) */}
+      <main className="flex-1 w-full max-w-md mx-auto p-4 sm:p-5">
+        {/* Caso 1: Comanda Aberta Específica (Cardápio / Itens Enviados / Pedir a Conta) */}
+        {visualizandoComanda && comandaAtivaId ? (
           <ComandaMesaView
             comandaId={comandaAtivaId}
-            garcomNome={garcomAtivoNome}
-            onVoltar={() => setTelaAtiva('mesas')}
-            onAdicionarItens={() => setIsCardapioOpen(true)}
+            garcomNome={nomeOperador}
+            onVoltar={() => {
+              setVisualizandoComanda(false);
+              refetchComandas();
+            }}
             onToast={showToast}
           />
         ) : (
-          <div className="p-8 text-center bg-surface border border-dashed border-border rounded-card">
-            <Utensils className="w-8 h-8 text-text-2/40 mx-auto mb-2" />
-            <p className="text-sm font-bold text-text">Nenhuma mesa selecionada</p>
-            <button
-              type="button"
-              onClick={() => setTelaAtiva('mesas')}
-              className="mt-3 text-xs font-bold text-brand-text underline"
-            >
-              Voltar para as mesas
-            </button>
-          </div>
+          <>
+            {/* Caso 2A: Aba Salão (Grade de Mesas - Fiel a G01) */}
+            {abaInferior === 'salao' && (
+              <MesasGrid
+                comandas={comandas}
+                nomeGarcom={nomeOperador}
+                garcomLogadoId={usuarioAtivoId}
+                garcons={garcons}
+                apiHealth={apiHealth}
+                onAbrirMesa={handleAbrirMesa}
+                onVerComanda={handleVerComanda}
+              />
+            )}
+
+            {/* Caso 2B: Aba Comandas (Fiel a G07 Comandas.png) */}
+            {abaInferior === 'comandas' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h1 className="text-2xl font-black text-text tracking-tight">Comandas</h1>
+                  <span className="text-xs font-bold text-text-2">
+                    {comandasAtivas.length} ativas
+                  </span>
+                </div>
+
+                {/* Pill Switcher "Minhas" vs "Todas" */}
+                <div className="flex p-1 bg-surface-2 border border-border rounded-full select-none">
+                  <button
+                    type="button"
+                    onClick={() => setFiltroComandas('minhas')}
+                    className={`flex-1 py-2 rounded-full text-xs font-bold transition-all ${
+                      filtroComandas === 'minhas'
+                        ? 'bg-surface text-text shadow-soft'
+                        : 'text-text-2 hover:text-text'
+                    }`}
+                  >
+                    Minhas ({comandasAtivas.filter((c) => c.garcom_id === usuarioAtivoId).length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setFiltroComandas('todas')}
+                    className={`flex-1 py-2 rounded-full text-xs font-bold transition-all ${
+                      filtroComandas === 'todas'
+                        ? 'bg-surface text-text shadow-soft'
+                        : 'text-text-2 hover:text-text'
+                    }`}
+                  >
+                    Todas ({comandasAtivas.length})
+                  </button>
+                </div>
+
+                {/* Lista de Comandas Ativas */}
+                {comandasExibidas.length === 0 ? (
+                  <div className="py-12 text-center bg-surface border border-border rounded-[20px] p-6 shadow-soft">
+                    <Receipt className="w-8 h-8 text-border mx-auto mb-2" />
+                    <p className="text-sm font-bold text-text">Nenhuma comanda ativa encontrada.</p>
+                    <p className="text-xs text-text-2 mt-1">
+                      Abra uma nova mesa no salão para iniciar um atendimento.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {comandasExibidas.map((cmd) => {
+                      const isConta = cmd.status === 'fechada';
+                      const tempo = formatElapsedTime(cmd.aberta_em);
+
+                      return (
+                        <div
+                          key={cmd.id}
+                          onClick={() => handleVerComanda(cmd)}
+                          className={`bg-surface rounded-[20px] p-4 flex items-center justify-between border cursor-pointer shadow-soft hover:shadow-card transition-all active:scale-[0.99] ${
+                            isConta ? 'border-2 border-danger' : 'border-border'
+                          }`}
+                        >
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-black text-base text-text">Mesa {cmd.mesa}</h3>
+                              <span
+                                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                  isConta
+                                    ? 'bg-danger-soft text-danger'
+                                    : 'bg-brand-soft text-brand-text'
+                                }`}
+                              >
+                                {isConta ? 'Conta pedida' : 'Aberta'}
+                              </span>
+                            </div>
+                            <p className="text-xs text-text-2 mt-0.5">
+                              {cmd.nome_cliente || 'Salão'} · {tempo || 'recente'}
+                            </p>
+                          </div>
+
+                          <div className="text-right">
+                            <div className="text-sm font-black text-text">
+                              {formatCurrency(cmd.total || cmd.subtotal || '0.00')}
+                            </div>
+                            <div className="text-[11px] text-text-2">
+                              {(cmd.itens || []).length} itens
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Caso 2C: Aba Perfil (Fiel a G09 Perfil.png) */}
+            {abaInferior === 'perfil' && (
+              <div className="space-y-4">
+                <h1 className="text-2xl font-black text-text tracking-tight">Perfil</h1>
+
+                {/* Card do Operador */}
+                <div className="bg-surface border border-border rounded-[24px] p-5 flex items-center gap-4 shadow-soft">
+                  <div className="w-14 h-14 rounded-full bg-brand-soft text-brand-text font-black text-lg flex items-center justify-center shrink-0 shadow-soft">
+                    {nomeOperador.slice(0, 2).toUpperCase()}
+                  </div>
+                  <div>
+                    <h2 className="font-black text-base text-text">{nomeOperador}</h2>
+                    <p className="text-xs text-text-2 mt-0.5">Garçom · Turno operacional ativo</p>
+                  </div>
+                </div>
+
+                {/* Card de Conexão */}
+                <div className="bg-surface border border-border rounded-[20px] p-4 flex items-center justify-between shadow-soft">
+                  <div className="flex items-center gap-3">
+                    <ShieldCheck className="w-5 h-5 text-text-2" />
+                    <span className="text-sm font-bold text-text">Conexão com a API</span>
+                  </div>
+                  <span className="bg-[#DDF0E4] text-[#2F7D4F] text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    Conectado
+                  </span>
+                </div>
+
+                {/* Botão Trocar Operador */}
+                <button
+                  type="button"
+                  onClick={() => setModo('login')}
+                  className="w-full h-13 py-3.5 rounded-[18px] border border-border bg-surface hover:bg-surface-2 font-bold text-xs text-text shadow-soft transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+                >
+                  <Users className="w-4 h-4 text-text-2" />
+                  <span>Trocar operador</span>
+                </button>
+
+                {/* Botão Sair do Turno (Logout) */}
+                <button
+                  type="button"
+                  onClick={logout}
+                  className="w-full h-13 py-3.5 rounded-[18px] border border-danger/30 bg-danger-soft hover:bg-danger/20 font-bold text-xs text-danger transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>Sair do turno</span>
+                </button>
+
+                <div className="text-center text-[11px] text-text-2/70 pt-6">
+                  VaptPDV v0.1 · Food Service OS
+                </div>
+              </div>
+            )}
+          </>
         )}
       </main>
 
-      {/* Botão Flutuante (FAB) de Abrir Mesa — Posicionado na Thumb Zone (Canto Inferior Direito) */}
-      {telaAtiva === 'mesas' && (
-        <button
-          type="button"
-          onClick={() => handleAbrirMesaClick('')}
-          className="fixed bottom-20 right-4 z-30 min-h-[54px] px-4 rounded-full bg-brand text-on-brand font-black text-xs shadow-modal flex items-center gap-2 hover:opacity-95 active:scale-95 transition-all select-none border-2 border-surface"
-          aria-label="Abrir nova mesa"
-        >
-          <Plus className="w-5 h-5 font-bold" />
-          <span>Abrir Mesa</span>
-        </button>
-      )}
-
-      {/* Barra de Navegação Inferior (Bottom Navigation) com 4 destinos */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-surface border-t border-border shadow-modal z-20">
-        <div className="max-w-md mx-auto grid grid-cols-4">
-          <button
-            type="button"
-            onClick={() => setTelaAtiva('mesas')}
-            className={`min-h-[56px] flex flex-col items-center justify-center gap-1 text-[11px] font-bold transition-colors select-none ${
-              telaAtiva === 'mesas'
-                ? 'text-brand-text border-t-2 border-brand bg-brand-soft/20'
-                : 'text-text-2 hover:text-text'
-            }`}
-          >
-            <LayoutGrid className="w-4 h-4" />
-            <span>Mesas</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              if (comandaAtivaId) {
-                setTelaAtiva('comanda');
-              } else {
-                showToast('erro', 'Selecione uma mesa aberta no salão para ver a comanda.');
-              }
-            }}
-            className={`min-h-[56px] flex flex-col items-center justify-center gap-1 text-[11px] font-bold transition-colors select-none ${
-              telaAtiva === 'comanda'
-                ? 'text-brand-text border-t-2 border-brand bg-brand-soft/20'
-                : 'text-text-2 hover:text-text'
-            }`}
-          >
-            <Receipt className="w-4 h-4" />
-            <span>{mesaAtiva ? `Mesa ${mesaAtiva}` : 'Comandas'}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setModo('cozinha')}
-            className="min-h-[56px] flex flex-col items-center justify-center gap-1 text-[11px] font-bold text-text-2 hover:text-text transition-colors select-none"
-          >
-            <ChefHat className="w-4 h-4" />
-            <span>Cozinha</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={logout}
-            className="min-h-[56px] flex flex-col items-center justify-center gap-1 text-[11px] font-bold text-text-2 hover:text-danger transition-colors select-none"
-          >
-            <User className="w-4 h-4" />
-            <span>Perfil</span>
-          </button>
-        </div>
-      </nav>
-
-      {/* Modais da Experiência do Garçom */}
+      {/* Modal Deslizante "Abrir Mesa" (Fiel a G02) */}
       <ModalAbrirMesa
         isOpen={isModalAbrirOpen}
         mesaPredefinida={mesaParaAbrir}
         garcomPadraoId={usuarioAtivoId}
         onClose={() => setIsModalAbrirOpen(false)}
-        onMesaAberta={handleMesaAbertaSucesso}
+        onMesaAberta={handleMesaAbertaComSucesso}
         onErrorToast={(msg) => showToast('erro', msg)}
       />
 
-      {comandaAtivaId && (
-        <CardapioModal
-          isOpen={isCardapioOpen}
-          mesaNumero={mesaAtiva || '...'}
-          comandaId={comandaAtivaId}
-          onClose={() => setIsCardapioOpen(false)}
-          onSucessoEnvio={(qtd) => {
-            showToast('sucesso', `${qtd} ${qtd === 1 ? 'item enviado' : 'itens enviados'} para a cozinha com sucesso!`);
-            refetchComandas();
-          }}
-          onErrorToast={(msg) => showToast('erro', msg)}
-        />
+      {/* ─────────────────────────────────────────────────────────────
+          BARRA DE NAVEGAÇÃO INFERIOR FIXA (Fiel a G01, G07, G09)
+          ───────────────────────────────────────────────────────────── */}
+      {!visualizandoComanda && (
+        <nav
+          className="fixed bottom-0 left-0 right-0 bg-surface/95 backdrop-blur-md border-t border-border z-40 select-none shadow-modal"
+          aria-label="Navegação do Garçom"
+        >
+          <div className="max-w-md mx-auto grid grid-cols-3 h-16">
+            {/* 1. Salão */}
+            <button
+              type="button"
+              onClick={() => setAbaInferior('salao')}
+              className={`flex flex-col items-center justify-center gap-1 text-[11px] font-bold transition-colors ${
+                abaInferior === 'salao'
+                  ? 'text-brand-text border-t-2 border-brand bg-brand-soft/20'
+                  : 'text-text-2 hover:text-text'
+              }`}
+            >
+              <LayoutGrid className="w-5 h-5" />
+              <span>Salão</span>
+            </button>
+
+            {/* 2. Comandas */}
+            <button
+              type="button"
+              onClick={() => setAbaInferior('comandas')}
+              className={`flex flex-col items-center justify-center gap-1 text-[11px] font-bold transition-colors ${
+                abaInferior === 'comandas'
+                  ? 'text-brand-text border-t-2 border-brand bg-brand-soft/20'
+                  : 'text-text-2 hover:text-text'
+              }`}
+            >
+              <Receipt className="w-5 h-5" />
+              <span>Comandas</span>
+            </button>
+
+            {/* 3. Perfil */}
+            <button
+              type="button"
+              onClick={() => setAbaInferior('perfil')}
+              className={`flex flex-col items-center justify-center gap-1 text-[11px] font-bold transition-colors ${
+                abaInferior === 'perfil'
+                  ? 'text-brand-text border-t-2 border-brand bg-brand-soft/20'
+                  : 'text-text-2 hover:text-text'
+              }`}
+            >
+              <User className="w-5 h-5" />
+              <span>Perfil</span>
+            </button>
+          </div>
+        </nav>
       )}
     </div>
   );
 };
-

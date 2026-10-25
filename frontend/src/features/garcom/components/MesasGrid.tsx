@@ -1,16 +1,16 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Utensils } from 'lucide-react';
+import { Plus, CheckCircle2, WifiOff } from 'lucide-react';
 import { MesaCard } from './MesaCard';
-import { Input } from '../../../components/ui/Input';
 import type { Comanda, Usuario } from '../../../types/api';
 
-export type FiltroMesa = 'todas' | 'minhas' | 'livres' | 'ocupadas' | 'conta_pedida';
+export type FiltroMesa = 'todas' | 'livres' | 'abertas' | 'minhas' | 'contas';
 
 export interface MesasGridProps {
   comandas: Comanda[];
+  nomeGarcom?: string;
   garcomLogadoId?: number | null;
   garcons?: Usuario[];
-  mesaSelecionadaId?: number | null;
+  apiHealth?: 'online' | 'offline' | 'checking';
   totalMesasSalao?: number;
   onAbrirMesa: (numeroMesa: string) => void;
   onVerComanda: (comanda: Comanda) => void;
@@ -18,30 +18,29 @@ export interface MesasGridProps {
 
 export const MesasGrid: React.FC<MesasGridProps> = ({
   comandas,
+  nomeGarcom = 'Garçom',
   garcomLogadoId,
-  garcons,
-  mesaSelecionadaId,
+  garcons = [],
+  apiHealth = 'online',
   totalMesasSalao = 12,
   onAbrirMesa,
   onVerComanda,
 }) => {
   const [filtroAtivo, setFiltroAtivo] = useState<FiltroMesa>('todas');
-  const [busca, setBusca] = useState('');
 
-  // Mapeamento de id do garçom -> nome para exibição rápida
+  // Mapeamento de id do garçom -> nome para exibição no card
   const garcomMap = useMemo(() => {
     const map = new Map<number, string>();
-    garcons?.forEach((g) => map.set(g.id, g.nome));
+    garcons.forEach((g) => map.set(g.id, g.nome));
     return map;
   }, [garcons]);
 
-  // Lista de mesas do salão (ex: 1 até totalMesasSalao)
+  // Lista de mesas padrão (1 até totalMesasSalao, mais qualquer mesa ativa adicional)
   const todasMesas = useMemo(() => {
     const lista: string[] = [];
     for (let i = 1; i <= totalMesasSalao; i++) {
       lista.push(String(i));
     }
-    // Inclui mesas de comandas abertas que tenham números acima de totalMesasSalao (ex: mesa 15 ou balcão)
     comandas.forEach((c) => {
       if (!lista.includes(String(c.mesa))) {
         lista.push(String(c.mesa));
@@ -50,11 +49,10 @@ export const MesasGrid: React.FC<MesasGridProps> = ({
     return lista;
   }, [totalMesasSalao, comandas]);
 
-  // Mapa de mesa -> comanda aberta/fechada
+  // Mapa de mesa -> comanda aberta ou fechada (conta pedida)
   const comandaPorMesa = useMemo(() => {
     const map = new Map<string, Comanda>();
     comandas.forEach((cmd) => {
-      // Prioriza comandas ativas (aberta ou fechada/conta pedida)
       if (cmd.status === 'aberta' || cmd.status === 'fechada') {
         map.set(String(cmd.mesa), cmd);
       }
@@ -64,134 +62,211 @@ export const MesasGrid: React.FC<MesasGridProps> = ({
 
   // Contadores para os filtros
   const contadores = useMemo(() => {
-    let ocupadas = 0;
-    let contaPedida = 0;
+    let livres = 0;
+    let abertas = 0;
     let minhas = 0;
+    let contas = 0;
 
-    todasMesas.forEach((m) => {
-      const cmd = comandaPorMesa.get(m);
-      if (cmd) {
-        if (cmd.status === 'fechada') contaPedida++;
-        else if (cmd.status === 'aberta') ocupadas++;
-
+    todasMesas.forEach((mesaNum) => {
+      const cmd = comandaPorMesa.get(mesaNum);
+      if (!cmd) {
+        livres++;
+      } else if (cmd.status === 'aberta') {
+        abertas++;
+        if (garcomLogadoId && cmd.garcom_id === garcomLogadoId) {
+          minhas++;
+        }
+      } else if (cmd.status === 'fechada') {
+        contas++;
         if (garcomLogadoId && cmd.garcom_id === garcomLogadoId) {
           minhas++;
         }
       }
     });
 
-    const livres = todasMesas.length - (ocupadas + contaPedida);
-
     return {
       todas: todasMesas.length,
-      ocupadas,
-      contaPedida,
       livres,
+      abertas,
       minhas,
+      contas,
     };
   }, [todasMesas, comandaPorMesa, garcomLogadoId]);
 
-  // Filtra as mesas conforme seleção de chips e busca textual
+  // Filtra as mesas de acordo com o chip selecionado
   const mesasFiltradas = useMemo(() => {
-    return todasMesas.filter((numMesa) => {
-      const cmd = comandaPorMesa.get(numMesa);
-
-      // Filtro de busca por número ou nome do cliente
-      if (busca.trim()) {
-        const termo = busca.toLowerCase();
-        const bateuNumero = numMesa.toLowerCase().includes(termo);
-        const bateuCliente = cmd?.nome_cliente?.toLowerCase().includes(termo);
-        if (!bateuNumero && !bateuCliente) return false;
-      }
-
-      // Filtro de categorias
+    return todasMesas.filter((mesaNum) => {
+      const cmd = comandaPorMesa.get(mesaNum);
+      if (filtroAtivo === 'todas') return true;
       if (filtroAtivo === 'livres') return !cmd;
-      if (filtroAtivo === 'ocupadas') return cmd?.status === 'aberta';
-      if (filtroAtivo === 'conta_pedida') return cmd?.status === 'fechada';
-      if (filtroAtivo === 'minhas') return cmd && garcomLogadoId && cmd.garcom_id === garcomLogadoId;
-
+      if (filtroAtivo === 'abertas') return cmd?.status === 'aberta';
+      if (filtroAtivo === 'contas') return cmd?.status === 'fechada';
+      if (filtroAtivo === 'minhas') {
+        return cmd && garcomLogadoId && cmd.garcom_id === garcomLogadoId;
+      }
       return true;
     });
-  }, [todasMesas, comandaPorMesa, filtroAtivo, busca, garcomLogadoId]);
-
-  const chips: { key: FiltroMesa; label: string; count: number }[] = [
-    { key: 'todas', label: 'Todas', count: contadores.todas },
-    { key: 'ocupadas', label: 'Ocupadas', count: contadores.ocupadas },
-    { key: 'livres', label: 'Livres', count: contadores.livres },
-    { key: 'conta_pedida', label: 'Conta Pedida', count: contadores.contaPedida },
-    ...(garcomLogadoId ? [{ key: 'minhas' as FiltroMesa, label: 'Minhas', count: contadores.minhas }] : []),
-  ];
+  }, [todasMesas, comandaPorMesa, filtroAtivo, garcomLogadoId]);
 
   return (
-    <div className="space-y-3">
-      {/* Barra de Filtros e Busca Rápida */}
-      <div className="space-y-2">
-        <Input
-          type="search"
-          value={busca}
-          onChange={(e) => setBusca(e.target.value)}
-          placeholder="Buscar mesa ou cliente..."
-          leftIcon={<Search className="w-4 h-4" />}
-          className="bg-surface"
-        />
+    <div className="relative pb-24">
+      {/* ─────────────────────────────────────────────────────────────
+          TOPO: Título, Saudação e Indicador de Conexão (Fiel a G01)
+          ───────────────────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h1 className="text-2xl font-black text-text tracking-tight">Salão</h1>
+          <p className="text-xs text-text-2 mt-0.5">Olá, {nomeGarcom} · VaptPDV Bar</p>
+        </div>
 
-        {/* Carrossel Horizontal de Chips */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-          {chips.map((chip) => {
-            const isActive = filtroAtivo === chip.key;
-            return (
-              <button
-                key={chip.key}
-                type="button"
-                onClick={() => setFiltroAtivo(chip.key)}
-                className={`min-h-[44px] px-3.5 rounded-full text-xs font-bold shrink-0 transition-all flex items-center gap-1.5 select-none ${
-                  isActive
-                    ? 'bg-brand text-on-brand shadow-soft ring-2 ring-brand/30'
-                    : 'bg-surface border border-border text-text hover:bg-border/30'
-                }`}
-              >
-                <span>{chip.label}</span>
-                <span
-                  className={`text-[11px] px-1.5 py-0.2 rounded-full tabular-nums ${
-                    isActive ? 'bg-black/15 text-on-brand' : 'bg-surface-2 text-text-2'
-                  }`}
-                >
-                  {chip.count}
-                </span>
-              </button>
-            );
-          })}
+        {/* Badge de Conexão no Canto Superior Direito */}
+        <div className="flex items-center">
+          {apiHealth === 'online' ? (
+            <div className="bg-[#DDF0E4] text-[#2F7D4F] text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5 shadow-soft">
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              <span>Conectado</span>
+            </div>
+          ) : (
+            <div className="bg-danger-soft text-danger text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1.5 shadow-soft">
+              <WifiOff className="w-3.5 h-3.5" />
+              <span>Offline</span>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Grade de Mesas (2 colunas mobile) */}
-      {mesasFiltradas.length === 0 ? (
-        <div className="p-8 text-center bg-surface border border-dashed border-border rounded-card">
-          <Utensils className="w-8 h-8 text-text-2/40 mx-auto mb-2" />
-          <p className="text-sm font-bold text-text">Nenhuma mesa encontrada</p>
-          <p className="text-xs text-text-2 mt-0.5">Tente ajustar a busca ou o filtro selecionado.</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-3 pb-20">
-          {mesasFiltradas.map((numMesa) => {
-            const cmd = comandaPorMesa.get(numMesa);
-            const nomeGarcom = cmd ? garcomMap.get(cmd.garcom_id) : undefined;
-            const isSelected = cmd?.id === mesaSelecionadaId;
+      {/* ─────────────────────────────────────────────────────────────
+          CHIPS DE FILTRO HORIZONTAIS (Fiel a G01)
+          ───────────────────────────────────────────────────────────── */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-4 scrollbar-none select-none">
+        <button
+          type="button"
+          onClick={() => setFiltroAtivo('todas')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all shrink-0 ${
+            filtroAtivo === 'todas'
+              ? 'bg-brand text-on-brand shadow-soft'
+              : 'bg-surface border border-border text-text hover:bg-surface-2'
+          }`}
+        >
+          <span>Todas</span>
+          <span
+            className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+              filtroAtivo === 'todas' ? 'bg-black/15 text-on-brand' : 'bg-surface-2 text-text-2'
+            }`}
+          >
+            {contadores.todas}
+          </span>
+        </button>
 
-            return (
-              <MesaCard
-                key={numMesa}
-                mesaNumero={numMesa}
-                comanda={cmd}
-                garcomNome={nomeGarcom}
-                isSelected={isSelected}
-                onAbrirMesa={onAbrirMesa}
-                onVerComanda={onVerComanda}
-              />
-            );
-          })}
-        </div>
-      )}
+        <button
+          type="button"
+          onClick={() => setFiltroAtivo('livres')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all shrink-0 ${
+            filtroAtivo === 'livres'
+              ? 'bg-brand text-on-brand shadow-soft'
+              : 'bg-surface border border-border text-text hover:bg-surface-2'
+          }`}
+        >
+          <span>Livres</span>
+          <span
+            className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+              filtroAtivo === 'livres' ? 'bg-black/15 text-on-brand' : 'bg-surface-2 text-text-2'
+            }`}
+          >
+            {contadores.livres}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setFiltroAtivo('abertas')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all shrink-0 ${
+            filtroAtivo === 'abertas'
+              ? 'bg-brand text-on-brand shadow-soft'
+              : 'bg-surface border border-border text-text hover:bg-surface-2'
+          }`}
+        >
+          <span>Abertas</span>
+          <span
+            className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+              filtroAtivo === 'abertas' ? 'bg-black/15 text-on-brand' : 'bg-surface-2 text-text-2'
+            }`}
+          >
+            {contadores.abertas}
+          </span>
+        </button>
+
+        {contadores.contas > 0 && (
+          <button
+            type="button"
+            onClick={() => setFiltroAtivo('contas')}
+            className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all shrink-0 ${
+              filtroAtivo === 'contas'
+                ? 'bg-danger text-white shadow-soft'
+                : 'bg-surface border border-danger/40 text-danger hover:bg-danger-soft'
+            }`}
+          >
+            <span>Conta pedida</span>
+            <span className="px-1.5 py-0.2 rounded-full text-[10px] bg-white/20">
+              {contadores.contas}
+            </span>
+          </button>
+        )}
+
+        <button
+          type="button"
+          onClick={() => setFiltroAtivo('minhas')}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-bold transition-all shrink-0 ${
+            filtroAtivo === 'minhas'
+              ? 'bg-brand text-on-brand shadow-soft'
+              : 'bg-surface border border-border text-text hover:bg-surface-2'
+          }`}
+        >
+          <span>Minhas</span>
+          <span
+            className={`px-1.5 py-0.2 rounded-full text-[10px] ${
+              filtroAtivo === 'minhas' ? 'bg-black/15 text-on-brand' : 'bg-surface-2 text-text-2'
+            }`}
+          >
+            {contadores.minhas}
+          </span>
+        </button>
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────
+          GRADE DE MESAS (2 Colunas no Mobile - Fiel a G01)
+          ───────────────────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 sm:gap-4">
+        {mesasFiltradas.map((mesaNum) => {
+          const comanda = comandaPorMesa.get(mesaNum);
+          const garcomNome = comanda ? garcomMap.get(comanda.garcom_id) : undefined;
+
+          return (
+            <MesaCard
+              key={mesaNum}
+              mesaNumero={mesaNum}
+              comanda={comanda}
+              garcomNome={garcomNome}
+              onAbrirMesa={onAbrirMesa}
+              onVerComanda={onVerComanda}
+            />
+          );
+        })}
+      </div>
+
+      {/* ─────────────────────────────────────────────────────────────
+          FAB FLUTUANTE "+ Abrir mesa" (Fiel a G01)
+          ───────────────────────────────────────────────────────────── */}
+      <div className="fixed bottom-20 right-4 sm:right-6 z-30">
+        <button
+          type="button"
+          onClick={() => onAbrirMesa('')}
+          className="bg-brand hover:bg-brand-hover text-on-brand font-black text-sm px-6 py-4 rounded-full shadow-modal flex items-center gap-2 transition-transform active:scale-95"
+        >
+          <Plus className="w-5 h-5 stroke-[2.5]" />
+          <span>Abrir mesa</span>
+        </button>
+      </div>
     </div>
   );
 };

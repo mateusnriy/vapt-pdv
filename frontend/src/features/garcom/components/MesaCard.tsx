@@ -1,7 +1,5 @@
 import React from 'react';
-import { Clock, User, Receipt } from 'lucide-react';
-import { Card } from '../../../components/ui/Card';
-import { Badge } from '../../../components/ui/Badge';
+import { Clock } from 'lucide-react';
 import { formatCurrency, formatElapsedTime, cn } from '../../../lib/utils';
 import type { Comanda } from '../../../types/api';
 
@@ -22,11 +20,10 @@ export const MesaCard: React.FC<MesaCardProps> = ({
   onAbrirMesa,
   onVerComanda,
 }) => {
-  const numFormatado = String(mesaNumero).trim().padStart(2, '0');
-
   const isContaPedida = comanda?.status === 'fechada';
-  const isOcupada = comanda?.status === 'aberta';
   const isLivre = !comanda || (comanda.status !== 'aberta' && comanda.status !== 'fechada');
+
+  const tempoAberto = formatElapsedTime(comanda?.aberta_em);
 
   const handleClick = () => {
     if (isLivre) {
@@ -36,79 +33,95 @@ export const MesaCard: React.FC<MesaCardProps> = ({
     }
   };
 
-  return (
-    <Card
-      interactive
-      onClick={handleClick}
-      className={cn(
-        'relative flex flex-col justify-between p-4 min-h-[140px] transition-all duration-150',
-        isLivre && 'border-dashed border-border bg-surface hover:border-brand/40',
-        isOcupada &&
-          'border-brand/70 bg-surface shadow-soft hover:shadow-card active:scale-[0.99]',
-        isContaPedida &&
-          'border-danger/80 ring-2 ring-danger/30 bg-surface shadow-soft active:scale-[0.99]',
-        isSelected && 'ring-2 ring-brand border-brand'
-      )}
-    >
-      {/* Topo do Card: Número da Mesa e Badge de Status */}
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex flex-col">
-          <span className="text-2xl font-black text-text leading-tight tracking-tight">
-            Mesa {numFormatado}
+  // 1. MESA LIVRE (G01: Borda tracejada, tag verde, "4 lugares")
+  if (isLivre) {
+    return (
+      <div
+        onClick={handleClick}
+        className={cn(
+          'bg-surface border-2 border-dashed border-[#8C7A68]/30 hover:border-brand rounded-[20px] p-4 flex flex-col justify-between min-h-[148px] cursor-pointer transition-all active:scale-[0.98] select-none shadow-soft',
+          isSelected && 'ring-2 ring-brand border-brand',
+        )}
+      >
+        <div className="flex items-start justify-between">
+          <span className="text-lg font-black text-text">Mesa {mesaNumero}</span>
+          <span className="bg-[#DDF0E4] text-[#2F7D4F] rounded-full px-2.5 py-0.5 text-xs font-bold">
+            Livre
           </span>
-          {comanda?.nome_cliente && (
-            <span className="text-xs font-semibold text-text-2 truncate max-w-[110px] flex items-center gap-1 mt-0.5">
-              <User className="w-3 h-3 shrink-0" />
-              {comanda.nome_cliente}
-            </span>
+        </div>
+
+        <div className="text-xs text-text-2 font-medium">4 lugares</div>
+      </div>
+    );
+  }
+
+  // 2. MESA COM CONTA PEDIDA (G01: Borda vermelha contínua, tag vermelha "Conta")
+  if (isContaPedida) {
+    return (
+      <div
+        onClick={handleClick}
+        className={cn(
+          'bg-surface border-2 border-danger rounded-[20px] p-4 flex flex-col justify-between min-h-[148px] cursor-pointer transition-all active:scale-[0.98] select-none shadow-soft',
+          isSelected && 'ring-2 ring-danger',
+        )}
+      >
+        <div className="flex items-start justify-between">
+          <span className="text-lg font-black text-text">Mesa {mesaNumero}</span>
+          <span className="bg-danger-soft text-danger rounded-full px-2.5 py-0.5 text-xs font-bold">
+            Conta
+          </span>
+        </div>
+
+        <div className="space-y-0.5">
+          <div className="text-xs font-bold text-text truncate">
+            {comanda?.nome_cliente || 'Cliente'} {garcomNome ? `· ${garcomNome}` : ''}
+          </div>
+          {tempoAberto && (
+            <div className="text-[11px] text-text-2 flex items-center gap-1">
+              <Clock className="w-3 h-3 text-danger" />
+              <span>{tempoAberto}</span>
+            </div>
           )}
         </div>
 
-        {isLivre && <Badge variant="livre">Livre</Badge>}
-        {isOcupada && (
-          <Badge variant="ocupada" icon={<Clock className="w-3 h-3" />}>
-            Ocupada
-          </Badge>
-        )}
-        {isContaPedida && (
-          <Badge variant="conta_pedida" icon={<Receipt className="w-3 h-3" />}>
-            Conta pedida
-          </Badge>
-        )}
+        <div className="text-base font-black text-text">
+          {formatCurrency(comanda?.total || comanda?.subtotal || '0.00')}
+        </div>
+      </div>
+    );
+  }
+
+  // 3. MESA ABERTA (G01: Faixa lateral mostarda de 6px, tag mostarda-soft "Aberta")
+  return (
+    <div
+      onClick={handleClick}
+      className={cn(
+        'bg-surface border border-border border-l-[6px] border-l-brand rounded-[20px] p-4 flex flex-col justify-between min-h-[148px] cursor-pointer transition-all active:scale-[0.98] select-none shadow-soft hover:shadow-card',
+        isSelected && 'ring-2 ring-brand',
+      )}
+    >
+      <div className="flex items-start justify-between">
+        <span className="text-lg font-black text-text">Mesa {mesaNumero}</span>
+        <span className="bg-brand-soft text-brand-text rounded-full px-2.5 py-0.5 text-xs font-bold">
+          Aberta
+        </span>
       </div>
 
-      {/* Conteúdo Central e Rodapé do Card */}
-      <div className="mt-3 pt-2 border-t border-border/60 flex items-end justify-between">
-        {isLivre ? (
-          <div className="flex items-center gap-1.5 text-xs text-text-2 font-medium">
-            <span className="w-2 h-2 rounded-full bg-success shrink-0" />
-            <span>Toque para abrir</span>
+      <div className="space-y-0.5">
+        <div className="text-xs font-bold text-text truncate">
+          {comanda?.nome_cliente || 'Salão'} {garcomNome ? `· ${garcomNome}` : ''}
+        </div>
+        {tempoAberto && (
+          <div className="text-[11px] text-text-2 flex items-center gap-1">
+            <Clock className="w-3 h-3 text-text-2" />
+            <span>{tempoAberto}</span>
           </div>
-        ) : (
-          <>
-            <div className="space-y-0.5">
-              <span className="text-[11px] font-medium text-text-2 flex items-center gap-1">
-                <Clock className="w-3 h-3 shrink-0 text-text-2/80" />
-                {formatElapsedTime(comanda?.aberta_em) || 'Recém aberta'}
-              </span>
-              {garcomNome && (
-                <span className="text-[11px] text-text-2 truncate max-w-[100px] block">
-                  {garcomNome}
-                </span>
-              )}
-            </div>
-
-            <div className="text-right">
-              <span className="text-[10px] uppercase font-bold text-text-2 tracking-wider block">
-                {isContaPedida ? 'Total' : 'Consumo'}
-              </span>
-              <span className="text-base font-extrabold text-text tabular-nums leading-none">
-                {formatCurrency(comanda?.total ?? comanda?.subtotal ?? '0.00')}
-              </span>
-            </div>
-          </>
         )}
       </div>
-    </Card>
+
+      <div className="text-base font-black text-text">
+        {formatCurrency(comanda?.subtotal || comanda?.total || '0.00')}
+      </div>
+    </div>
   );
 };

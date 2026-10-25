@@ -1,7 +1,5 @@
 import React from 'react';
-import { Minus, Plus } from 'lucide-react';
-import { Card } from '../../../components/ui/Card';
-import { Badge } from '../../../components/ui/Badge';
+import { Minus, Plus, Utensils, Beer, Coffee, IceCream, Pizza } from 'lucide-react';
 import { formatCurrency, cn } from '../../../lib/utils';
 import type { Produto } from '../../../types/api';
 
@@ -19,84 +17,102 @@ export const ProdutoStepperCard: React.FC<ProdutoStepperCardProps> = ({
   onDecrementar,
 }) => {
   const isEsgotado = !produto.ativo || produto.estoque <= 0;
-  const isEstoqueBaixo =
-    !isEsgotado && produto.estoque <= produto.estoque_minimo && produto.estoque_minimo > 0;
+
+  // Cor do tile tintado e ícone de acordo com a categoria
+  const obterEstiloTile = (cat: string) => {
+    const c = cat.toLowerCase();
+    if (c.includes('bebida') || c.includes('chopp') || c.includes('cerveja')) {
+      return { bg: 'bg-[#EBDDCB]', icon: Beer };
+    }
+    if (c.includes('porção') || c.includes('porcao') || c.includes('frita') || c.includes('petisco')) {
+      return { bg: 'bg-[#E4EFD5]', icon: Pizza };
+    }
+    if (c.includes('sobremesa') || c.includes('doce') || c.includes('sorvete')) {
+      return { bg: 'bg-[#F8D9CC]', icon: IceCream };
+    }
+    if (c.includes('cafe') || c.includes('café')) {
+      return { bg: 'bg-[#EBDDCB]', icon: Coffee };
+    }
+    // Padrão / Lanches
+    return { bg: 'bg-[#FBE6B8]', icon: Utensils };
+  };
+
+  const tile = obterEstiloTile(produto.categoria);
+  const IconeCategoria = tile.icon;
 
   return (
-    <Card
+    <div
       className={cn(
-        'p-3.5 flex items-center justify-between gap-3 bg-surface transition-all duration-150',
-        isEsgotado && 'opacity-55 grayscale-[20%] pointer-events-none bg-surface-2',
-        quantidade > 0 && 'border-brand ring-1 ring-brand/50 shadow-soft'
+        'p-3 sm:p-4 rounded-[20px] bg-surface border border-border flex items-center justify-between gap-3 shadow-soft transition-all select-none',
+        quantidade > 0 && 'border-brand ring-1 ring-brand/40',
+        isEsgotado && 'opacity-50 pointer-events-none bg-surface-2',
       )}
     >
-      {/* Informações do Produto */}
-      <div className="flex-1 min-w-0 pr-2">
-        <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-          <span className="text-xs font-bold text-text truncate block leading-snug">
-            {produto.nome}
-          </span>
-          {isEsgotado && <Badge variant="esgotado" size="sm">Esgotado</Badge>}
-          {isEstoqueBaixo && (
-            <span className="text-[10px] font-bold text-brand-text bg-brand-soft/70 px-1.5 py-0.2 rounded-full tabular-nums">
-              Restam {produto.estoque}
-            </span>
+      {/* Lado Esquerdo: Tile Tintado + Informações (Fiel a G03) */}
+      <div className="flex items-center gap-3.5 min-w-0">
+        <div
+          className={cn(
+            'w-14 h-14 rounded-[16px] flex items-center justify-center shrink-0 shadow-soft',
+            tile.bg,
           )}
+        >
+          <IconeCategoria className="w-6 h-6 text-[#2B2019]" />
         </div>
 
-        <div className="flex items-baseline gap-2">
-          <span className="text-sm font-black text-text tabular-nums">
-            {formatCurrency(produto.preco)}
-          </span>
-          <span className="text-[11px] text-text-2 font-medium capitalize">
+        <div className="min-w-0 pr-1">
+          <h4 className="font-extrabold text-sm text-text truncate leading-snug">
+            {produto.nome}
+          </h4>
+          <p className="text-[11px] text-text-2 truncate capitalize">
             {produto.categoria}
-          </span>
+          </p>
+          <div className="text-sm font-black text-text mt-0.5">
+            {formatCurrency(produto.preco)}
+          </div>
         </div>
       </div>
 
-      {/* Controles de Quantidade (Stepper Móvel com área de toque >= 44px) */}
-      <div className="flex items-center shrink-0">
+      {/* Lado Direito: Stepper Âmbar ou Botão [+] Redondo (Fiel a G03) */}
+      <div className="shrink-0">
         {isEsgotado ? (
-          <span className="text-xs font-bold text-text-2/60 px-2 py-1 select-none">
-            Indisponível
+          <span className="text-[11px] font-bold text-danger bg-danger-soft px-2 py-1 rounded-full">
+            Esgotado
           </span>
-        ) : quantidade === 0 ? (
-          <button
-            type="button"
-            onClick={onIncrementar}
-            className="min-h-[44px] min-w-[44px] px-3.5 rounded-card bg-surface-2 border border-border hover:bg-brand hover:text-on-brand hover:border-brand flex items-center justify-center gap-1 text-xs font-bold text-text transition-all active:scale-95 shadow-soft select-none"
-            aria-label={`Adicionar ${produto.nome}`}
-          >
-            <Plus className="w-4 h-4 font-bold" />
-            <span>Adicionar</span>
-          </button>
-        ) : (
-          <div className="flex items-center rounded-card bg-surface-2 border border-border p-1 gap-1">
+        ) : quantidade > 0 ? (
+          <div className="flex items-center gap-2.5 bg-[#FDF0D2] px-2.5 py-1.5 rounded-full border border-brand/30">
             <button
               type="button"
               onClick={onDecrementar}
-              className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-lg bg-surface flex items-center justify-center text-text hover:bg-border/60 transition-colors shadow-soft active:scale-95 select-none"
-              aria-label={`Diminuir ${produto.nome}`}
+              className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-text hover:bg-surface-2 active:scale-95 transition-all shadow-soft"
+              aria-label="Diminuir"
             >
-              <Minus className="w-4 h-4 font-bold" />
+              <Minus className="w-3.5 h-3.5" />
             </button>
 
-            <span className="w-9 text-center font-black text-sm text-text tabular-nums select-none">
+            <span className="font-black text-sm text-text tabular-nums min-w-[16px] text-center">
               {quantidade}
             </span>
 
             <button
               type="button"
               onClick={onIncrementar}
-              disabled={quantidade >= produto.estoque}
-              className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-lg bg-brand text-on-brand flex items-center justify-center hover:opacity-90 transition-opacity disabled:opacity-30 disabled:cursor-not-allowed shadow-soft active:scale-95 select-none"
-              aria-label={`Aumentar ${produto.nome}`}
+              className="w-7 h-7 rounded-full bg-white flex items-center justify-center text-text hover:bg-surface-2 active:scale-95 transition-all shadow-soft"
+              aria-label="Aumentar"
             >
-              <Plus className="w-4 h-4 font-bold" />
+              <Plus className="w-3.5 h-3.5" />
             </button>
           </div>
+        ) : (
+          <button
+            type="button"
+            onClick={onIncrementar}
+            className="w-10 h-10 rounded-full border border-border bg-surface hover:bg-surface-2 flex items-center justify-center text-text active:scale-95 transition-all shadow-soft"
+            aria-label="Adicionar item"
+          >
+            <Plus className="w-4 h-4" />
+          </button>
         )}
       </div>
-    </Card>
+    </div>
   );
 };
