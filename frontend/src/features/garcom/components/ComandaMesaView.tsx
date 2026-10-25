@@ -178,7 +178,6 @@ export const ComandaMesaView: React.FC<ComandaMesaViewProps> = ({
       onToast('sucesso', 'Comanda cancelada.');
       onVoltar();
     } catch (err) {
-      setModalCancelarAberto(false);
       if (err instanceof ApiError) {
         onToast('erro', err.message);
       } else {

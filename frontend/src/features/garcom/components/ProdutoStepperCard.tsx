@@ -22,19 +22,19 @@ export const ProdutoStepperCard: React.FC<ProdutoStepperCardProps> = ({
   const obterEstiloTile = (cat: string) => {
     const c = cat.toLowerCase();
     if (c.includes('bebida') || c.includes('chopp') || c.includes('cerveja')) {
-      return { bg: 'bg-[#EBDDCB]', icon: Beer };
+      return { bg: 'bg-tint-beer', icon: Beer };
     }
     if (c.includes('porção') || c.includes('porcao') || c.includes('frita') || c.includes('petisco')) {
-      return { bg: 'bg-[#E4EFD5]', icon: Pizza };
+      return { bg: 'bg-tint-snack', icon: Pizza };
     }
     if (c.includes('sobremesa') || c.includes('doce') || c.includes('sorvete')) {
-      return { bg: 'bg-[#F8D9CC]', icon: IceCream };
+      return { bg: 'bg-tint-dessert', icon: IceCream };
     }
     if (c.includes('cafe') || c.includes('café')) {
-      return { bg: 'bg-[#EBDDCB]', icon: Coffee };
+      return { bg: 'bg-tint-drink', icon: Coffee };
     }
     // Padrão / Lanches
-    return { bg: 'bg-[#FBE6B8]', icon: Utensils };
+    return { bg: 'bg-tint-beer', icon: Utensils };
   };
 
   const tile = obterEstiloTile(produto.categoria);
@@ -56,7 +56,7 @@ export const ProdutoStepperCard: React.FC<ProdutoStepperCardProps> = ({
             tile.bg,
           )}
         >
-          <IconeCategoria className="w-6 h-6 text-[#2B2019]" />
+          <IconeCategoria className="w-6 h-6 text-text" />
         </div>
 
         <div className="min-w-0 pr-1">

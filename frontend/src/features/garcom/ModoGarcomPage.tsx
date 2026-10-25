@@ -268,10 +268,6 @@ export const ModoGarcomPage: React.FC = () => {
                   <LogOut className="w-4 h-4" />
                   <span>Sair do turno</span>
                 </button>
-
-                <div className="text-center text-[11px] text-text-2/70 pt-6">
-                  VaptPDV v0.1 · Food Service OS
-                </div>
               </div>
             )}
           </>
