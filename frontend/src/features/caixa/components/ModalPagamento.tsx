@@ -153,6 +153,25 @@ export const ModalPagamento: React.FC<ModalPagamentoProps> = ({
     setValorRecebidoInput(valorParcelaInput);
   };
 
+  // Teclado numérico touch para dinheiro (C07 Pagamento dinheiro.png)
+  const handleKeypad = (tecla: string) => {
+    if (tecla === 'C') {
+      setValorRecebidoInput('');
+      return;
+    }
+    if (tecla === ',') {
+      if (!valorRecebidoInput.includes(',') && !valorRecebidoInput.includes('.')) {
+        setValorRecebidoInput((prev) => (prev ? `${prev},` : '0,'));
+      }
+      return;
+    }
+    const partes = valorRecebidoInput.split(/[,.]/);
+    if (partes.length > 1 && partes[1].length >= 2) {
+      return;
+    }
+    setValorRecebidoInput((prev) => (prev === '0' ? tecla : `${prev}${tecla}`));
+  };
+
   // Copiar código Pix
   const handleCopiarPix = () => {
     navigator.clipboard.writeText(codigoPixSimulado);
@@ -567,6 +586,24 @@ export const ModalPagamento: React.FC<ModalPagamentoProps> = ({
                     >
                       Valor Exato
                     </button>
+                  </div>
+
+                  {/* Teclado Numérico Touch (C07 Pagamento dinheiro.png) */}
+                  <div className="grid grid-cols-3 gap-1.5 pt-1">
+                    {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', ','].map((tecla) => (
+                      <button
+                        key={tecla}
+                        type="button"
+                        onClick={() => handleKeypad(tecla)}
+                        className={`h-9 rounded-btn font-mono font-bold text-sm border transition-colors flex items-center justify-center ${
+                          tecla === 'C'
+                            ? 'bg-danger-soft text-danger border-danger/30 hover:bg-danger/20'
+                            : 'bg-surface text-text border-border hover:bg-surface-2 active:bg-border/60'
+                        }`}
+                      >
+                        {tecla}
+                      </button>
+                    ))}
                   </div>
 
                   {/* Badge de Troco em Destaque Verde */}

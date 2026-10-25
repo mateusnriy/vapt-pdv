@@ -11,51 +11,65 @@ import {
 } from 'lucide-react';
 import { useSessionStore } from '../../../stores/useSessionStore';
 
+export type AbaNavegacaoCaixa = 'venda' | 'mesas' | 'pedidos' | 'receber';
+
 export interface SidebarNavProps {
-  abaAtiva?: 'venda' | 'mesas' | 'pedidos' | 'caixa';
-  onAbaChange?: (aba: 'venda' | 'mesas' | 'pedidos' | 'caixa') => void;
+  abaAtiva?: AbaNavegacaoCaixa | 'caixa';
+  onAbaChange?: (aba: AbaNavegacaoCaixa) => void;
+  contasPedidasCount?: number;
 }
 
 export const SidebarNav: React.FC<SidebarNavProps> = ({
   abaAtiva = 'venda',
   onAbaChange,
+  contasPedidasCount = 0,
 }) => {
   const { nomeOperador, perfilAtivo, setModo, logout } = useSessionStore();
 
-  const navItems = [
+  // Compatibilidade com antigo id 'caixa' -> 'receber'
+  const abaNormalizada: AbaNavegacaoCaixa =
+    abaAtiva === 'caixa' ? 'receber' : (abaAtiva as AbaNavegacaoCaixa);
+
+  const navItems: {
+    id: AbaNavegacaoCaixa;
+    label: string;
+    icon: React.ElementType;
+    badgeCount?: number;
+  }[] = [
     {
-      id: 'venda' as const,
+      id: 'venda',
       label: 'Venda',
       icon: ShoppingCart,
     },
     {
-      id: 'mesas' as const,
+      id: 'mesas',
       label: 'Mesas',
       icon: LayoutGrid,
     },
     {
-      id: 'pedidos' as const,
+      id: 'pedidos',
       label: 'Pedidos',
       icon: ClipboardList,
     },
     {
-      id: 'caixa' as const,
-      label: 'Caixa',
+      id: 'receber',
+      label: 'Receber',
       icon: Wallet,
+      badgeCount: contasPedidasCount,
     },
   ];
 
   return (
     <aside
-      className="w-[88px] min-w-[88px] max-w-[88px] h-full bg-nav flex flex-col items-center justify-between py-4 select-none border-r border-[#43342A] z-20"
+      className="w-[88px] min-w-[88px] max-w-[88px] h-full bg-nav flex flex-col items-center justify-between py-4 select-none border-r border-[#43342A] z-20 shrink-0"
       aria-label="Navegação do Caixa"
     >
       {/* Topo: Logotipo Vapt */}
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex flex-col items-center gap-4 w-full">
         <button
           onClick={() => onAbaChange?.('venda')}
           className="w-12 h-12 rounded-[14px] bg-brand text-on-brand flex items-center justify-center font-black text-xl shadow-soft hover:opacity-95 transition-transform active:scale-95"
-          title="VaptPDV — Início"
+          title="VaptPDV — Início / Venda"
           aria-label="VaptPDV Início"
         >
           <UtensilsCrossed className="w-6 h-6 text-on-brand" />
@@ -65,13 +79,14 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
         <nav className="flex flex-col items-center gap-2 mt-2 w-full px-2">
           {navItems.map((item) => {
             const Icon = item.icon;
-            const isAtivo = abaAtiva === item.id;
+            const isAtivo = abaNormalizada === item.id;
+            const temBadge = (item.badgeCount ?? 0) > 0;
 
             return (
               <button
                 key={item.id}
                 onClick={() => onAbaChange?.(item.id)}
-                className={`w-full py-2.5 px-1 rounded-[14px] flex flex-col items-center justify-center gap-1 transition-all ${
+                className={`w-full py-2.5 px-1 rounded-[14px] flex flex-col items-center justify-center gap-1 transition-all relative ${
                   isAtivo
                     ? 'bg-[#523C2E] text-[#F6EEE4] shadow-sm font-bold'
                     : 'text-[#C9B8A6] hover:bg-[#523C2E]/50 hover:text-[#F6EEE4]'
@@ -79,7 +94,17 @@ export const SidebarNav: React.FC<SidebarNavProps> = ({
                 aria-current={isAtivo ? 'page' : undefined}
                 title={item.label}
               >
-                <Icon className={`w-5 h-5 ${isAtivo ? 'text-brand' : 'text-[#C9B8A6]'}`} />
+                {/* Badge de alerta de contas pendentes */}
+                {temBadge && (
+                  <span className="absolute top-1 right-2 w-4 h-4 rounded-full bg-danger text-white text-[10px] font-black flex items-center justify-center animate-pulse">
+                    {item.badgeCount}
+                  </span>
+                )}
+                <Icon
+                  className={`w-5 h-5 ${
+                    isAtivo ? 'text-brand' : temBadge ? 'text-danger' : 'text-[#C9B8A6]'
+                  }`}
+                />
                 <span className="text-[11px] leading-tight tracking-tight">{item.label}</span>
               </button>
             );

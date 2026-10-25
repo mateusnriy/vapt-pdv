@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
   Activity,
   Printer,
@@ -7,17 +7,23 @@ import {
   Plus,
   CheckCircle2,
   AlertCircle,
+  X,
 } from 'lucide-react';
-import { SidebarNav } from './components/SidebarNav';
+import { SidebarNav, type AbaNavegacaoCaixa } from './components/SidebarNav';
 import { CatalogoGrid } from './components/CatalogoGrid';
 import { PainelComanda } from './components/PainelComanda';
+import { MesasCaixaView } from './components/MesasCaixaView';
+import { PedidosCaixaView } from './components/PedidosCaixaView';
+import { ReceberCaixaView } from './components/ReceberCaixaView';
 import { ModalPagamento } from './components/ModalPagamento';
+import { ComprovanteVenda } from './components/ComprovanteVenda';
 import { Modal } from '../../components/ui/Modal';
 import { Input } from '../../components/ui/Input';
 import { Button } from '../../components/ui/Button';
 import { useSessionStore } from '../../stores/useSessionStore';
 import { useComandaStore } from '../../stores/useComandaStore';
 import {
+  useComandas,
   useComandasSalao,
   useLancarItem,
   useAbrirComanda,
@@ -38,8 +44,9 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
   const { nomeOperador, perfilAtivo, logout } = useSessionStore();
   const { comandaAtivaId, setComandaAtivaId } = useComandaStore();
 
-  // Queries TanStack Query
-  const { data: comandasSalao = [], refetch: refetchComandas } = useComandasSalao();
+  // Queries TanStack Query com dados reais do PostgreSQL
+  const { data: todasComandas = [], refetch: refetchTodas } = useComandas();
+  const { data: comandasSalao = [], refetch: refetchSalao } = useComandasSalao();
   const { data: produtos = [], isLoading: isLoadingProdutos } = useProdutosDisponiveis();
   const { data: garcons = [] } = useGarconsAtivos();
 
@@ -48,10 +55,10 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
   const abrirComandaMut = useAbrirComanda();
   const fecharComandaMut = useFecharComanda();
 
-  // Navegação lateral interna
-  const [abaNavegacao, setAbaNavegacao] = useState<'venda' | 'mesas' | 'pedidos' | 'caixa'>('venda');
+  // Navegação lateral interna (venda, mesas, pedidos, receber)
+  const [abaNavegacao, setAbaNavegacao] = useState<AbaNavegacaoCaixa>('venda');
 
-  // Termo de busca e ref do input
+  // Termo de busca e ref do input para atalho F2
   const [buscaValor, setBuscaValor] = useState<string>('');
   const buscaInputRef = useRef<HTMLInputElement>(null);
 
@@ -62,9 +69,12 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
   const [nomeCliente, setNomeCliente] = useState<string>('');
   const [documentoCliente, setDocumentoCliente] = useState<string>('');
 
-  // Modais
+  // Modais de Operação
   const [isModalPagamentoOpen, setIsModalPagamentoOpen] = useState<boolean>(false);
   const [comandaParaPagamento, setComandaParaPagamento] = useState<Comanda | null>(null);
+
+  const [isModalReciboOpen, setIsModalReciboOpen] = useState<boolean>(false);
+  const [comandaParaRecibo, setComandaParaRecibo] = useState<Comanda | null>(null);
 
   const [isModalClienteOpen, setIsModalClienteOpen] = useState<boolean>(false);
   const [isModalAbrirMesaOpen, setIsModalAbrirMesaOpen] = useState<boolean>(false);
@@ -81,6 +91,11 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
     setToast({ tipo, mensagem });
     setTimeout(() => setToast(null), 4000);
   };
+
+  // Contagem de contas pedidas aguardando quitação no caixa
+  const contasPedidasCount = useMemo(() => {
+    return comandasSalao.filter((c) => c.status === 'fechada').length;
+  }, [comandasSalao]);
 
   // Garante que uma comanda esteja selecionada se houver mesas em atendimento
   useEffect(() => {
@@ -100,7 +115,7 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
     }
   }, [garcons, novoGarcomId]);
 
-  // Comanda ativa selecionada no painel
+  // Comanda ativa selecionada no painel de venda
   const comandaAtiva = comandasSalao.find((c) => c.id === comandaAtivaId) || null;
 
   // Lançamento rápido de produto no caixa
@@ -136,7 +151,7 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
     }
   };
 
-  // Abertura do modal de pagamento
+  // Abertura do modal de pagamento para qualquer comanda
   const handleAbrirPagamento = (comanda: Comanda) => {
     setComandaParaPagamento(comanda);
     setIsModalPagamentoOpen(true);
@@ -144,7 +159,14 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
 
   // Conclusão do pagamento
   const handlePagamentoConcluido = (_comandaPaga: Comanda) => {
-    refetchComandas();
+    refetchSalao();
+    refetchTodas();
+  };
+
+  // Visualizar recibo / comprovante
+  const handleVerRecibo = (comanda: Comanda) => {
+    setComandaParaRecibo(comanda);
+    setIsModalReciboOpen(true);
   };
 
   // Ao clicar em 'Nova Venda' ou fechar após quitação, limpa dados do cliente anterior
@@ -173,11 +195,31 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
       setComandaAtivaId(nova.id);
       setIsModalAbrirMesaOpen(false);
       setNovaMesaInput('');
-      refetchComandas();
+      setAbaNavegacao('venda');
+      refetchSalao();
+      refetchTodas();
     } catch (err) {
       showToast(
         'erro',
         err instanceof ApiError ? `${err.codigo}: ${err.message}` : 'Erro ao abrir mesa.'
+      );
+    }
+  };
+
+  // Fechar comanda a partir de MesasCaixaView
+  const handleFecharConta = async (comanda: Comanda) => {
+    try {
+      await fecharComandaMut.mutateAsync({
+        comandaId: comanda.id,
+        dto: { aplicar_taxa_servico: true },
+      });
+      showToast('sucesso', `Conta da Mesa ${comanda.mesa} fechada (Gorjeta 10% aplicada).`);
+      refetchSalao();
+      refetchTodas();
+    } catch (err) {
+      showToast(
+        'erro',
+        err instanceof ApiError ? err.message : 'Erro ao fechar conta da comanda.'
       );
     }
   };
@@ -193,6 +235,9 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
         } else if (isModalAbrirMesaOpen) {
           setIsModalAbrirMesaOpen(false);
           return;
+        } else if (isModalReciboOpen) {
+          setIsModalReciboOpen(false);
+          return;
         }
       }
 
@@ -204,15 +249,18 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
       }
 
       // Não dispara atalhos de venda/cobrança se o modal de pagamento já estiver aberto
-      if (isModalPagamentoOpen) {
+      if (isModalPagamentoOpen || isModalReciboOpen) {
         return;
       }
 
-      // F2: Focar Busca
+      // F2: Focar Busca (se estiver na aba de venda)
       if (event.key === 'F2') {
         event.preventDefault();
-        buscaInputRef.current?.focus();
-        buscaInputRef.current?.select();
+        setAbaNavegacao('venda');
+        setTimeout(() => {
+          buscaInputRef.current?.focus();
+          buscaInputRef.current?.select();
+        }, 50);
         return;
       }
 
@@ -241,7 +289,10 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
                   handleAbrirPagamento(comandaFechada);
                 },
                 onError: (err) => {
-                  showToast('erro', err instanceof ApiError ? err.message : 'Erro ao fechar comanda.');
+                  showToast(
+                    'erro',
+                    err instanceof ApiError ? err.message : 'Erro ao fechar comanda.'
+                  );
                 },
               }
             );
@@ -262,6 +313,7 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
     isModalClienteOpen,
     isModalAbrirMesaOpen,
     isModalPagamentoOpen,
+    isModalReciboOpen,
   ]);
 
   return (
@@ -290,9 +342,10 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
       <SidebarNav
         abaAtiva={abaNavegacao}
         onAbaChange={(aba) => setAbaNavegacao(aba)}
+        contasPedidasCount={contasPedidasCount}
       />
 
-      {/* 2. Conteúdo Central + TopBar + Painel Lateral */}
+      {/* 2. Conteúdo Central + TopBar + Telas Integradas */}
       <div className="flex-1 flex flex-col h-full overflow-hidden">
         {/* TopBar Superior de 80px (DESIGN.md §6.1) */}
         <header className="h-20 min-h-[80px] max-h-[80px] bg-surface border-b border-border px-6 flex items-center justify-between shrink-0 z-10">
@@ -313,7 +366,10 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
               variant="outline"
               size="sm"
               leftIcon={<Plus className="w-3.5 h-3.5" />}
-              onClick={() => setIsModalAbrirMesaOpen(true)}
+              onClick={() => {
+                setNovaMesaInput('');
+                setIsModalAbrirMesaOpen(true);
+              }}
               className="text-xs ml-2 font-bold"
             >
               Abrir Mesa
@@ -322,7 +378,7 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
 
           {/* Indicadores de Conexão, Hardware e Operador */}
           <div className="flex items-center gap-3">
-            {/* Sincronização API */}
+            {/* Sincronização API Fastify */}
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-2 border border-border text-xs">
               <Activity className="w-3.5 h-3.5 text-text-2" />
               <span className="text-text-2">API Fastify:</span>
@@ -342,11 +398,11 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
             {/* Impressora Placeholder (DESIGN.md §6.1) */}
             <div
               className="hidden xl:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-2/60 border border-border text-xs text-text-2"
-              title="Impressora de cozinha e balcão não conectada (disponível em versão futura)"
+              title="Impressora de cozinha e balcão não conectada"
             >
               <Printer className="w-3.5 h-3.5 text-text-2" />
-              <span>Impressora cozinha:</span>
-              <span className="font-medium text-text-2/80">Não conectada</span>
+              <span>Impressora:</span>
+              <span className="font-medium text-text-2/80">Térmica 80mm</span>
             </div>
 
             {/* Operador Ativo */}
@@ -372,33 +428,74 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
           </div>
         </header>
 
-        {/* Área Central: Catálogo em Grid (Esquerda) + Painel da Comanda (Direita) */}
-        <div className="flex-1 flex flex-row overflow-hidden">
-          {/* Catálogo de Produtos em 4 Colunas */}
-          <CatalogoGrid
-            produtos={produtos}
-            isLoading={isLoadingProdutos}
-            onLancarItem={handleLancarItemCatalogo}
-            buscaInputRef={buscaInputRef}
-            buscaValor={buscaValor}
-            onBuscaChange={setBuscaValor}
-            comandaAbertaId={comandaAtivaId}
-          />
+        {/* Área Central Renderizada Dinamicamente de acordo com a Aba Ativa */}
+        {abaNavegacao === 'venda' && (
+          <div className="flex-1 flex flex-row overflow-hidden animate-fadeIn">
+            {/* Catálogo de Produtos em 4 Colunas (C01 Venda.png) */}
+            <CatalogoGrid
+              produtos={produtos}
+              isLoading={isLoadingProdutos}
+              onLancarItem={handleLancarItemCatalogo}
+              buscaInputRef={buscaInputRef}
+              buscaValor={buscaValor}
+              onBuscaChange={setBuscaValor}
+              comandaAbertaId={comandaAtivaId}
+            />
 
-          {/* Painel Lateral Fixo de 440px Antissobreposição */}
-          <PainelComanda
-            comandaAtivaId={comandaAtivaId}
-            comandasDisponiveis={comandasSalao}
-            onSelecionarComanda={(id) => setComandaAtivaId(id)}
-            onAbrirModalPagamento={handleAbrirPagamento}
-            onAbrirModalCliente={() => setIsModalClienteOpen(true)}
-            nomeCliente={nomeCliente}
-            documentoCliente={documentoCliente}
-            onToast={showToast}
-            taxa10={taxa10}
-            onTaxa10Change={setTaxa10}
+            {/* Painel Lateral Fixo de 440px Antissobreposição */}
+            <PainelComanda
+              comandaAtivaId={comandaAtivaId}
+              comandasDisponiveis={comandasSalao}
+              onSelecionarComanda={(id) => setComandaAtivaId(id)}
+              onAbrirModalPagamento={handleAbrirPagamento}
+              onAbrirModalCliente={() => setIsModalClienteOpen(true)}
+              nomeCliente={nomeCliente}
+              documentoCliente={documentoCliente}
+              onToast={showToast}
+              taxa10={taxa10}
+              onTaxa10Change={setTaxa10}
+            />
+          </div>
+        )}
+
+        {abaNavegacao === 'mesas' && (
+          <MesasCaixaView
+            comandas={comandasSalao}
+            garcons={garcons}
+            onSelecionarMesa={(cmd) => {
+              setComandaAtivaId(cmd.id);
+              setAbaNavegacao('venda');
+            }}
+            onAbrirMesa={(mesaNum) => {
+              if (mesaNum) setNovaMesaInput(mesaNum);
+              setIsModalAbrirMesaOpen(true);
+            }}
+            onFecharConta={handleFecharConta}
+            onReceberPagamento={handleAbrirPagamento}
           />
-        </div>
+        )}
+
+        {abaNavegacao === 'pedidos' && (
+          <PedidosCaixaView
+            comandas={todasComandas}
+            garcons={garcons}
+            onSelecionarComanda={(cmd) => {
+              setComandaAtivaId(cmd.id);
+              setAbaNavegacao('venda');
+            }}
+            onReceberPagamento={handleAbrirPagamento}
+            onVerComprovante={handleVerRecibo}
+          />
+        )}
+
+        {abaNavegacao === 'receber' && (
+          <ReceberCaixaView
+            comandas={todasComandas}
+            garcons={garcons}
+            onReceberPagamento={handleAbrirPagamento}
+            onVerComprovante={handleVerRecibo}
+          />
+        )}
 
         {/* Rodapé de Atalhos de Teclado (DESIGN.md §6.1 / §8.5) */}
         <footer className="h-10 min-h-[40px] max-h-[40px] bg-surface-2 border-t border-border px-6 flex items-center justify-between text-xs text-text-2 shrink-0">
@@ -425,7 +522,7 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
               <kbd className="bg-surface px-1.5 py-0.5 rounded border border-border font-mono text-[11px] font-bold text-text">
                 Esc
               </kbd>
-              Fechar Modal
+              Fechar Janela
             </span>
           </div>
 
@@ -447,69 +544,106 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
         onToast={showToast}
       />
 
+      {/* Modal de Exibição / Reimpressão de Recibo Térmico */}
+      {isModalReciboOpen && comandaParaRecibo && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-[#2B2019]/60 backdrop-blur-sm animate-fadeIn"
+          role="dialog"
+          aria-modal="true"
+        >
+          <div className="relative w-full max-w-lg rounded-card-lg bg-surface border border-border shadow-modal p-6 text-left flex flex-col max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between pb-3 border-b border-border shrink-0">
+              <h2 className="text-lg font-black text-text">Comprovante de Venda</h2>
+              <button
+                onClick={() => setIsModalReciboOpen(false)}
+                className="p-1.5 rounded-btn text-text-2 hover:bg-surface-2"
+                aria-label="Fechar comprovante"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 py-4">
+              <ComprovanteVenda
+                comanda={comandaParaRecibo}
+                parcelas={[
+                  {
+                    id: '1',
+                    forma: comandaParaRecibo.forma_pagamento || 'dinheiro',
+                    valorCentavos: Math.round(
+                      parseFloat(comandaParaRecibo.total || comandaParaRecibo.subtotal || '0') * 100
+                    ),
+                  },
+                ]}
+                nomeOperador={nomeOperador}
+                documentoCliente={comandaParaRecibo.nome_cliente || undefined}
+                onNovaVenda={() => setIsModalReciboOpen(false)}
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal Rápido de Identificação do Cliente / CPF (F4) */}
       <Modal
         isOpen={isModalClienteOpen}
         onClose={() => setIsModalClienteOpen(false)}
-        title="Identificação do Cliente (F4)"
-        description="Vincule o nome ou CPF/CNPJ do cliente à venda atual"
+        title="Identificação do Cliente / CPF (F4)"
+        maxWidth="sm"
       >
-        <div className="space-y-4">
+        <div className="space-y-4 py-2">
           <Input
             label="Nome do Cliente"
-            placeholder="Ex: Kaio França"
+            placeholder="Ex: Carlos Oliveira"
             value={nomeCliente}
             onChange={(e) => setNomeCliente(e.target.value)}
           />
-
           <Input
             label="CPF / CNPJ na Nota"
             placeholder="000.000.000-00"
             value={documentoCliente}
             onChange={(e) => setDocumentoCliente(e.target.value)}
           />
-
-          <div className="flex justify-end gap-2 pt-2">
+          <div className="flex justify-end gap-2 pt-3 border-t border-border">
             <Button variant="outline" onClick={() => setIsModalClienteOpen(false)}>
               Fechar
             </Button>
             <Button
               variant="primary"
               onClick={() => {
-                showToast('sucesso', 'Dados do cliente salvos para o fechamento.');
                 setIsModalClienteOpen(false);
+                showToast('sucesso', 'Dados do cliente vinculados à venda.');
               }}
             >
-              Salvar Dados
+              Salvar
             </Button>
           </div>
         </div>
       </Modal>
 
-      {/* Modal de Abertura de Mesa */}
+      {/* Modal Rápido de Abertura de Mesa */}
       <Modal
         isOpen={isModalAbrirMesaOpen}
         onClose={() => setIsModalAbrirMesaOpen(false)}
-        title="Abrir Mesa no Salão"
-        description="Informe o número da mesa e selecione o garçom responsável"
+        title="Abrir Nova Mesa no Salão"
+        maxWidth="sm"
       >
-        <div className="space-y-4">
+        <div className="space-y-4 py-2">
           <Input
             label="Número da Mesa"
-            placeholder="Ex: 12"
-            type="number"
+            placeholder="Ex: 05"
             value={novaMesaInput}
             onChange={(e) => setNovaMesaInput(e.target.value)}
+            autoFocus
           />
 
           <div>
-            <label className="text-xs font-semibold text-text-2 tracking-wide uppercase block mb-1.5">
+            <label className="text-xs font-semibold text-text-2 block mb-1">
               Garçom Responsável
             </label>
             <select
               value={novoGarcomId || ''}
               onChange={(e) => setNovoGarcomId(Number(e.target.value))}
-              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-input bg-surface border border-border text-text font-medium text-sm focus:outline-none focus:ring-1 focus:ring-text"
+              className="w-full min-h-[44px] px-3.5 py-2.5 rounded-input bg-surface border border-border text-text text-sm font-medium focus:outline-none focus:border-text shadow-soft"
             >
               {garcons.map((g) => (
                 <option key={g.id} value={g.id}>
@@ -519,16 +653,23 @@ export const ModoCaixaPage: React.FC<ModoCaixaPageProps> = ({
             </select>
           </div>
 
-          <div className="flex justify-end gap-2 pt-3">
+          <Input
+            label="Nome do Cliente (Opcional)"
+            placeholder="Ex: Marina Souza"
+            value={nomeCliente}
+            onChange={(e) => setNomeCliente(e.target.value)}
+          />
+
+          <div className="flex justify-end gap-2 pt-3 border-t border-border">
             <Button variant="outline" onClick={() => setIsModalAbrirMesaOpen(false)}>
               Cancelar
             </Button>
             <Button
               variant="primary"
-              isLoading={abrirComandaMut.isPending}
               onClick={handleConfirmarAbrirMesa}
+              isLoading={abrirComandaMut.isPending}
             >
-              Confirmar Abertura
+              Abrir e Atender
             </Button>
           </div>
         </div>
