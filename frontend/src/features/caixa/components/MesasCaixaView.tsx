@@ -186,7 +186,7 @@ export const MesasCaixaView: React.FC<MesasCaixaViewProps> = ({
             const isFechada = comanda?.status === 'fechada';
 
             const garcomNome = comanda ? garcomMap.get(comanda.garcom_id) || `Garçom #${comanda.garcom_id}` : '';
-            const itensCount = comanda?.itens?.length || 0;
+            const itensCount = (comanda?.itens || []).reduce((acc, it) => acc + it.quantidade, 0);
             const totalValor = comanda ? parseFloat(comanda.total || comanda.subtotal || '0') : 0;
 
             if (isLivre) {

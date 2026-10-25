@@ -69,6 +69,8 @@ export const PainelComanda: React.FC<PainelComandaProps> = ({
   const possuiItens = itens.length > 0;
   const isFechada = comanda?.status === 'fechada';
   const isPaga = comanda?.status === 'paga';
+  const isCancelada = comanda?.status === 'cancelada';
+  const isBloqueada = isFechada || isPaga || isCancelada;
 
   // Subtotal calculado a partir dos itens copiados ou vindo da API
   const subtotalNumero = itens.reduce((acc, it) => {
@@ -94,7 +96,7 @@ export const PainelComanda: React.FC<PainelComandaProps> = ({
 
   // Aumentar quantidade (+1) com trava contra duplo clique
   const handleIncrementar = async (item: ItemComanda) => {
-    if (!comanda || isFechada || isPaga || itemMutatingId !== null) return;
+    if (!comanda || isBloqueada || itemMutatingId !== null) return;
     setItemMutatingId(item.id);
     try {
       await ajustarItemMut.mutateAsync({
@@ -114,7 +116,7 @@ export const PainelComanda: React.FC<PainelComandaProps> = ({
 
   // Diminuir quantidade (-1) ou remover se chegar a zero
   const handleDecrementar = async (item: ItemComanda) => {
-    if (!comanda || isFechada || isPaga || itemMutatingId !== null) return;
+    if (!comanda || isBloqueada || itemMutatingId !== null) return;
     setItemMutatingId(item.id);
     try {
       if (item.quantidade <= 1) {
@@ -142,7 +144,7 @@ export const PainelComanda: React.FC<PainelComandaProps> = ({
 
   // Remover item diretamente pela lixeira
   const handleRemover = async (item: ItemComanda) => {
-    if (!comanda || isFechada || isPaga || itemMutatingId !== null) return;
+    if (!comanda || isBloqueada || itemMutatingId !== null) return;
     setItemMutatingId(item.id);
     try {
       await removerItemMut.mutateAsync({
@@ -162,7 +164,7 @@ export const PainelComanda: React.FC<PainelComandaProps> = ({
 
   // Alternar switch de taxa 10%
   const handleToggleTaxa10 = (aplicar: boolean) => {
-    if (!comanda || isFechada || isPaga) return;
+    if (!comanda || isBloqueada) return;
     onTaxa10Change(aplicar);
   };
 
@@ -170,6 +172,10 @@ export const PainelComanda: React.FC<PainelComandaProps> = ({
   const handleCobrarClick = async () => {
     if (!comanda) {
       onToast('erro', 'Nenhuma mesa ou comanda selecionada.');
+      return;
+    }
+    if (isCancelada) {
+      onToast('erro', 'Esta comanda foi cancelada e não pode ser cobrada.');
       return;
     }
     if (!possuiItens) {
@@ -350,6 +356,11 @@ export const PainelComanda: React.FC<PainelComandaProps> = ({
                   Paga
                 </Badge>
               )}
+              {comanda.status === 'cancelada' && (
+                <Badge variant="danger" size="sm">
+                  Cancelada
+                </Badge>
+              )}
             </div>
           </div>
         ) : (
@@ -493,7 +504,11 @@ export const PainelComanda: React.FC<PainelComandaProps> = ({
               Total a Pagar
             </span>
             <span className="text-[11px] text-text-2">
-              {comanda?.status === 'aberta' ? 'Estimado (conferência)' : 'Fechada pelo caixa'}
+              {comanda?.status === 'aberta'
+                ? 'Estimado (conferência)'
+                : comanda?.status === 'cancelada'
+                ? 'Comanda cancelada'
+                : 'Fechada pelo caixa'}
             </span>
           </div>
           <span className="text-3xl font-black text-text tabular-nums tracking-tight">
@@ -504,9 +519,9 @@ export const PainelComanda: React.FC<PainelComandaProps> = ({
         {/* Botão Primário Cobrar de 68px */}
         <button
           onClick={handleCobrarClick}
-          disabled={!comanda || !possuiItens || fecharComandaMut.isPending || isPaga}
+          disabled={!comanda || !possuiItens || fecharComandaMut.isPending || isPaga || isCancelada}
           className={`w-full h-[68px] min-h-[68px] px-6 rounded-card font-black text-lg flex items-center justify-between transition-all duration-150 select-none shadow-soft active:scale-[0.99] ${
-            !comanda || !possuiItens || isPaga
+            !comanda || !possuiItens || isPaga || isCancelada
               ? 'bg-surface-2 text-text-2/60 cursor-not-allowed border border-border'
               : 'bg-brand text-on-brand hover:opacity-95 cursor-pointer'
           }`}

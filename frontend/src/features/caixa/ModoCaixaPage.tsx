@@ -216,7 +216,7 @@ export const ModoCaixaPage: React.FC = () => {
       showToast('erro', `A Mesa ${comanda.mesa} não tem itens lançados. Lance itens ou cancele a comanda.`);
       return;
     }
-    setTaxaFechamento(true);
+    setTaxaFechamento(taxa10);
     setComandaParaFechar(comanda);
   };
 
@@ -249,6 +249,9 @@ export const ModoCaixaPage: React.FC = () => {
     try {
       await cancelarComandaMut.mutateAsync(comanda.id);
       showToast('sucesso', `Comanda da Mesa ${comanda.mesa} cancelada. Mesa liberada.`);
+      if (comandaAtivaId === comanda.id) {
+        setComandaAtivaId(null);
+      }
       refetchSalao();
       refetchTodas();
     } catch (err) {
@@ -583,7 +586,11 @@ export const ModoCaixaPage: React.FC = () => {
               />
 
               <div className="flex justify-end gap-2 pt-3 border-t border-border">
-                <Button variant="outline" onClick={() => setComandaParaFechar(null)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setComandaParaFechar(null)}
+                  disabled={fecharComandaMut.isPending}
+                >
                   Voltar
                 </Button>
                 <Button
