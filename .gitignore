@@ -10,7 +10,7 @@ coverage/
 *.tsbuildinfo
 .cache/
 
-# Segredos e configuração local
+# Segredos e configuração local (NUNCA versionar senhas ou variáveis reais)
 .env
 .env.*
 !.env.example
@@ -30,6 +30,7 @@ _bmad/render/
 _bmad/config.user.toml
 _bmad/custom/*.user.toml
 *.agent/
+.agent/
 _bmad/
 _bmad-output/
 
@@ -41,9 +42,3 @@ Thumbs.db
 # Configurações locais de IDE
 .vscode/
 .idea/
-
-# Outros
-AGENTS.md
-CHANGELOG.md
-STATUS.md
-DESIGN.md

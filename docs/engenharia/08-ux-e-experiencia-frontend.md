@@ -1,249 +1,326 @@
-# 08 — Design de Experiência do Usuário (UX/UI) e Arquitetura Frontend PWA
+# 08 — Especificação de UX/UI Design e Frontend — VaptPDV
 
-> **Responsável:** Sally (UX Designer & UI Specialist — BMad Method)  
-> **Co-Autoria Técnica:** Winston (System Architect)  
-> **Projeto:** VaptPDV — Interfaces Operacionais de Alta Densidade e Velocidade para Salão, Caixa, Cozinha (KDS) e Gestão  
-> **Abordagem:** Functional Enterprise POS (Square POS & Stripe Dashboard Style), Paleta Estrutural Slate/Zinc, Geometria Técnica (`rounded-md` 6px e `rounded-lg` 8px), Tipografia Inter com `tabular-nums` e Superfície Flat (`1px solid #E2E8F0`).
-
----
-
-## 1. Visão de UX e Princípios de Design (Functional Enterprise POS)
-
-O **VaptPDV** adota uma abordagem estritamente funcional voltada à produtividade ininterrupta de caixas, garçons e gerentes:
-1. **Pragmatismo Operacional & Silêncio Visual:** Telas de PDV com giro intenso precisam de estabilidade visual contínua. Elimina-se qualquer elemento puramente decorativo, gradientes, efeitos neon ou sombras difusas. A hierarquia da tela é expressa exclusivamente por **densidade de informação, contraste tipográfico em escala Slate e divisórias sólidas de 1px solid #E2E8F0**.
-2. **Paleta Neutra Estrutural (Zero Cores Neon):** Fundo neutro e repousante em Slate-50 (`#F8FAFC`), superfícies e cartões em branco puro (`#FFFFFF`) e textos em Slate-900 (`#0F172A`). A ação definitiva de pagamento e confirmação utiliza exclusivamente um **Verde Operacional Fechado (`#15803D` - Green 700)** com texto branco puro (`#FFFFFF`), e ações secundárias utilizam **Azul Corporativo Sóbrio (`#1D4ED8` - Blue 700)**.
-3. **Sem Brilhos e Sombras Difusas (Flat Design Rigoroso):** Todos os componentes utilizam `box-shadow: none`. Containers, cartões, tabelas e cabeçalhos são delimitados por bordas secas de `1px solid #E2E8F0`.
-4. **Geometria Compacta e Técnica:** Proibição de formatos circulares e pílulas (`rounded-full`). Adoção de cantos retos e técnicos: **`rounded-md` (`6px`)** para botões, inputs, abas e badges, e **`rounded-lg` (`8px`)** para cartões e modais.
-5. **Tipografia Unificada e Precisão Numérica:** Fonte exclusiva **`Inter`** com aplicação compulsória de **`font-variant-numeric: tabular-nums`** (`tabular-nums` no Tailwind/CSS) em todos os preços (`R$ 12,50`), quantidades, códigos de comanda (`#42`), contadores de KDS (`08:42`) e totais monetários.
-6. **Zero Cálculo no Cliente (*Backend Single Source of Truth*):** O frontend jamais calcula subtotal, taxa de serviço de 10%, troco ou estoque. Cada alteração exibe exatamente os valores `Decimal` (`"12.50"`) retornados pela API do `vapt-pdv-core`.
-7. **Visibilidade de Estado Distribuído (*Graceful Degradation UI*):** Indicador discreto e sóbrio em cinza Slate caso um microsserviço satélite (`kds-service`, `fidelidade-service` ou `analytics-bi-service`) esteja operando em fila assíncrona, sem bloquear a operação do caixa nem assustar o operador.
+> **Responsáveis:** Sally (BMad UX/UI Designer), Winston (BMad System Architect) & John (BMad Product Manager)  
+> **Projeto:** VaptPDV — Sistema Distribuído de Ponto de Venda, KDS, Fidelidade e Analytics para Bares e Lanchonetes  
+> **Disciplina:** Sistemas Distribuídos (3ª Unidade — DCC/UERN)  
+> **Autores:** Kaio França & Mateus Neri  
+> **Status:** Aprovado e Baseline Oficial de Interface (PDV Core & Satélites)
 
 ---
 
-## 2. Design System: Tokens Semânticos, Cores e Tipografia
+## 1. Visão Geral e Princípios de Design
 
-### 2.1. Paleta Semântica Estrutural
+O design do **VaptPDV** foi concebido sob o lema: **"Mostarda, café e creme. Cantos arredondados, sem neon e sem emoji."**  
+A prioridade máxima é a **velocidade, precisão e estabilidade operacional** durante os horários de pico (rush) de bares, botecos e lanchonetes:
 
-| Token Semântico | Hexadecimal | Aplicação no Mapa de Mesas e Caixa | Aplicação no Painel KDS (Cozinha/Bar) |
-| :--- | :---: | :--- | :--- |
-| **Fundo Geral (`surface-canvas`)** | `#F8FAFC` (Slate-50) | Fundo plano geral de todas as telas operacionais. | Fundo plano geral da tela de TV/Tablet. |
-| **Superfície (`surface-card`)** | `#FFFFFF` (White) | Cartões de mesa, painéis do caixa e formulários. | Fichas de preparo brancas com borda sólida. |
-| **Borda Sólida (`border-default`)** | `#E2E8F0` (Slate-200) | Delimitação de 1px de cards, tabelas e botões. | Delimitação de 1px entre colunas e tickets. |
-| **Texto Principal (`ink-primary`)** | `#0F172A` (Slate-900) | Títulos, valores de pagamento e dados contábeis. | Número da mesa, itens e tempo decorrido. |
-| **Verde Operacional (`action-primary` / `--status-free`)** | `#15803D` (Green-700) | **Ação Primária:** Confirmar Pagamento / Mesa Livre. | **Dentro do Prazo:** SLA ideal de preparo. |
-| **Âmbar Técnico (`status-open`)** | `#B45309` (Amber-700) | **Mesa Aberta:** Consumo em andamento no salão. | **Atenção:** Preparo próximo do limite de SLA. |
-| **Azul Corporativo (`action-secondary` / `--status-closed`)** | `#1D4ED8` (Blue-700) | **Comanda Fechada:** Pré-conta aguardando recebimento. | **Em Preparo Ativo:** Cozinha manipulando prato. |
-| **Cinza Neutro (`status-ready`)** | `#475569` (Slate-600) | **Item Pronto:** Notificação discreta de prato pronto. | **Pronto p/ Entrega:** Aguardando retirada no balcão. |
-| **Vermelho Sóbrio (`status-alert`)** | `#B91C1C` (Red-700) | **Cancelamento / Estoque Zerado / Erro.** | **SLA Atrasado:** Destaque sóbrio no topo da coluna. |
-
-### 2.2. Tipografia e Numeração Tabular
-- **Fonte Única:** `Inter` em toda a aplicação.
-- **Números Tabulares Obrigatórios:** `font-variant-numeric: tabular-nums` (Tailwind: `tabular-nums`) em todos os preços, cronômetros, quantidades e identificadores, garantindo alinhamento vertical absoluto de centavos (`R$ 12,50` vs `R$ 148,90`).
+* **Zero Poluição Visual:** Proibido o uso de emojis aleatórios, efeitos neon ou sombras pesadas.
+* **Ergonomia e Foco Operacional:** Alvos de toque generosos ($\ge 44\text{ px}$ em mobile e telas touch), tipografia com números estritamente tabulares (`tabular-nums`) para evitar desalinhamento de preços e cálculos monetários.
+* **Tolerância a Ambientes Ruidosos e Acelerados:** Estados de mesa e itens de preparo utilizam redundância de cor e texto (ex.: status nunca depende apenas de verde/amarelo/vermelho; há sempre texto explícito como *Livre*, *Ocupada*, *Conta pedida*).
 
 ---
 
-## 3. Fluxo Global de Navegação entre as 5 Visões
+## 2. Design System e Tokens Visuais (DESIGN.md)
+
+### 2.1. Paleta de Cores Semântica
+
+| Token | Modo Claro | Modo Escuro | Semântica e Uso |
+| :--- | :---: | :---: | :--- |
+| **`bg` (Creme)** | `#FBF7F1` | `#17120F` | Fundo principal das telas e páginas |
+| **`surface`** | `#FFFFFF` | `#221A15` | Superfície de cards, modais e painéis elevados |
+| **`surface-2`** | `#F3ECE1` | `#2D231C` | Campos de formulário, steppers de quantidade, estados desabilitados |
+| **`border`** | `#E5DACB` | `#43342A` | Bordas estruturais e divisores sutis |
+| **`text` (Café)** | `#2B2019` | `#F6EEE4` | Tipografia principal (títulos, totais, valores) |
+| **`text-2`** | `#6A5849` | `#C2B1A0` | Tipografia secundária (apoio, legendas, categorias) |
+| **`brand` (Mostarda)** | `#F2A81D` | `#F5B335` | Ação primária (*Call to Action*), botão Cobrar, abas ativas |
+| **`on-brand`** | `#2B2019` | `#2B2019` | Texto de alto contraste sobre botões `brand` |
+| **`brand-soft`** | `#FDF0D2` | `#3D2E14` | Destaque suave, seleção, status *"Em preparo"* / *"Ocupada"* |
+| **`brand-text`** | `#8A5200` | `#F5C766` | Texto legível sobre fundos `brand-soft` |
+| **`nav` (Café Profundo)**| `#3A2A21` | `#0F0B09` | Barra lateral de navegação (desktop do caixa e gerência) |
+| **`success` (Manjericão)**| `#2F7D4F` | `#5FC083` | Status *"Livre"*, *"Pronto"*, sincronização ativa e confirmações |
+| **`success-soft`** | `#DDF0E4` | `#1D3326` | Fundo suave de badges de sucesso |
+| **`danger` (Tomate)** | `#C4391D` | `#F07A60` | Ações destrutivas, erros, itens esgotados e status *"Conta pedida"* |
+| **`danger-soft`** | `#FBE3DC` | `#3D1E17` | Fundo suave de alertas e produtos esgotados |
+| **`tint-beer`** | `#FBE6B8` | `#382A15` | Fundo pastel para categorias de cervejas e chopes |
+| **`tint-snack`** | `#E4EFD5` | `#223325` | Fundo pastel para porções e petiscos |
+| **`tint-drink`** | `#F8D9CC` | `#3D211C` | Fundo pastel para drinks e coquetéis |
+| **`tint-dessert`** | `#EBDDCB` | `#342A22` | Fundo pastel para sobremesas e cafés |
+
+### 2.2. Tipografia e Escala
+
+* **Família Tipográfica:** **Plus Jakarta Sans** (pesos 400 a 800); fallback `system-ui, -apple-system, sans-serif`.
+* **Formatação Numérica:** Obrigatoriedade de `font-variant-numeric: tabular-nums` em todos os preços, quantidades e relógios.
+* **Escala:**
+  * **Total / KPI:** `30–32px / 800`
+  * **Título de Tela:** `24–26px / 800`
+  * **Título de Seção:** `16–18px / 700–800`
+  * **Corpo / Lista de Itens:** `14–15px / 600`
+  * **Metadados / Apoio:** `12–13px / 600` (mínimo absoluto de 12px)
+
+### 2.3. Formas, Espaçamentos e Elevação
+
+* **Raios de Borda (`border-radius`):**
+  * Controles de formulário e inputs: `14px`
+  * Cards de mesas e produtos: `20px` a `24px`
+  * Chips de categorias e status pills: `999px` (Pill completa)
+  * Botões de ação primária grande: `18px` a `20px`
+* **Sistema de Espaçamento:** Base em múltiplos de 4 (`8px`, `12px`, `16px`, `24px`, `32px`).
+* **Elevação:** Borda sutil de `1px solid #E5DACB` combinada com sombra levíssima (`box-shadow: 0 1px 2px rgba(43, 32, 25, 0.06)`).
+
+---
+
+## 3. Especificação Detalhada das Telas do Sistema
 
 ```mermaid
 flowchart TD
-    Landing["🌐 Barra Superior / Seletor de Modo Operacional (VaptPDV Web/PWA)"]
+    T0["🔑 Tela 0: Login Operacional (/login)\nSeleção de Operador & Despacho por Perfil"]
+    
+    T0 -->|Perfil 'garcom'| T1["📱 Tela 1: Salão & Mesas (/garcom)"]
+    T0 -->|Perfil 'caixa'| T3["🖥️ Tela 3: Balcão & Caixa (/caixa)"]
+    T0 -->|Perfil 'cozinha'| TK["🍳 Tela KDS: Fila de Cozinha (/kds)"]
+    T0 -->|Perfil 'gerente'| T5["📊 Tela 5: Gestão & BI (/gestao)"]
 
-    subgraph V1["📱 Jornada 1: Modo Garçom (Mobile & Smart POS)"]
-        G_Mapa["Mapa de Mesas (1 a 30)<br/>Filtros: Todas | Livres | Ocupadas | Com Item Pronto"]
-        G_Abrir["Modal Rápido: Abrir Mesa<br/>(Seleciona Garçom + Nome Cliente Opcional)"]
-        G_Comanda["Comanda da Mesa Aberta<br/>(Lista de Itens + Catálogo Rápido por Categoria)"]
+    subgraph ModoGarcom["📱 Modo Garçom (PWA Mobile · 390x844)"]
+        T1 -->|Toque na Mesa ou + Abrir| T2["Tela 2: Comanda da Mesa & Lançamento"]
+        T2 -->|Enviar para a cozinha| API_LANCAR["POST /comandas/:id/itens"]
+        T2 -->|Pedir a conta| API_CONTA["Atualiza status para 'Conta pedida'"]
     end
 
-    subgraph V2["💻 Jornada 2: Modo Caixa (Desktop/Tablet Split-View)"]
-        C_Fila["Fila de Comandas Ativas<br/>(Colunas: Abertas no Salão | Fechadas p/ Receber)"]
-        C_Conferencia["Conferência & Pré-Conta<br/>(Toggle Taxa 10% -> POST /fechar)"]
-        C_Pagamento["Recebimento & Split Payment<br/>(Dinheiro / Pix / Cartão + CPF Cashback -> POST /pagar)"]
+    subgraph ModoCaixa["🖥️ Modo Caixa / Balcão (Desktop / Tablet · 1440x900)"]
+        T3 -->|Cobrar| T4["Tela 4: Modal de Pagamento & Quitação (Split)"]
+        T4 -->|Concluir Venda| API_PAGAR["POST /comandas/:id/pagar"]
     end
 
-    subgraph V3["📺 Jornada 3: Painel KDS (Cozinha e Bar)"]
-        K_Board["Quadro Kanban em Tempo Real (kds-service)<br/>Colunas: Recebido | Em Preparo | Pronto p/ Entrega"]
+    subgraph ModoKDS["🍳 Modo KDS (Display Cozinha / Bar)"]
+        TK -->|Avançar Status| API_KDS["PATCH /kds/fichas/:id/status"]
     end
 
-    subgraph V4["👥 Jornada 4: Gestão de Cardápio & Equipe"]
-        M_Catalogo["Gestão de Cardápio, Estoque e Equipe<br/>(CRUD Produtos + Ajuste Estoque + Usuários)"]
+    subgraph ModoGestao["📊 Modo Gestão & Analytics (Desktop · 1440x900)"]
+        T5
     end
-
-    subgraph V5["📊 Jornada 5: Dashboard Analytics & BI"]
-        M_Analytics["Dashboard Analytics & BI (analytics-bi-service)<br/>(Faturamento, Ticket Médio, Curva ABC, Alertas)"]
-    end
-
-    Landing --> G_Mapa
-    Landing --> C_Fila
-    Landing --> K_Board
-    Landing --> M_Catalogo
-    Landing --> M_Analytics
-
-    G_Mapa -- "Mesa Livre" --> G_Abrir --> G_Comanda
-    G_Mapa -- "Mesa Ocupada" --> G_Comanda
-    C_Fila --> C_Conferencia --> C_Pagamento
 ```
+
+### 3.0. Tela 0 — Login Operacional e Roteamento de Estação (`/login`)
+* **Dispositivo Alvo:** Adaptável (smartphones para garçons; tablets/desktops para caixa, cozinha e gerência).
+* **Estrutura Visual:**
+  * **Hero Header:** Logotipo VaptPDV em mostarda `#F2A81D`, subtítulo: *"Selecione seu perfil e operador para iniciar o turno"*.
+  * **4 Cards de Perfil de Acesso:**
+    1. **📱 Garçom (Salão PWA):** Cartão com ícone de smartphone, badge *"Mobile / PWA"*, despachando diretamente para `/garcom`.
+    2. **💻 Caixa (Balcão Operacional):** Cartão com ícone de monitor, badge *"Desktop 1440×900"*, despachando para `/caixa`.
+    3. **🍳 Cozinha (Painel KDS):** Cartão com ícone de chapéu de chef/frigideira, badge *"KDS / Fila"*, despachando para `/kds`.
+    4. **📊 Gerente (Gestão & BI):** Cartão com ícone de dashboard, badge *"Relatórios & Cardápio"*, despachando para `/gestao`.
+  * **Seletor Rápido de Colaborador:** Lista dinâmica de operadores ativos (`GET /usuarios?ativo=true`). O operador seleciona seu nome com 1 clique e entra imediatamente na estação, sem atrito de senhas no Módulo 1.
+  * **Barra de Sessão Persistente:** Em todas as telas operacionais, o avatar e nome do operador são exibidos no topo com botão *"Trocar Operador"*, retornando a `/login` a qualquer momento.
+
+### 3.1. Tela 1 — Modo Garçom: Visão do Salão e Grade de Mesas (Mobile)
+* **Dispositivo Alvo:** Smartphones (390×844 px), uso móvel com uma única mão.
+* **Estrutura Visual:**
+  * **Cabeçalho:** Identificação do turno (*"Sábado · jantar"*), título *"Salão"*, indicador de status de conexão (*"Online"* com badge verde suave) e avatar do garçom logado (*"RM"*).
+  * **Filtros por Chips:** `Todas`, `Minhas`, `Livres`, `Conta pedida`.
+  * **Grade de Mesas (2 Colunas):**
+    * **Mesa Livre:** Borda tracejada suave (`#E5DACB`), badge `Livre` (`#DDF0E4`), capacidade de lugares. Ao tocar, abre o modal rápido de abertura de mesa.
+    * **Mesa Ocupada:** Borda sólida, badge `Ocupada` (`#FDF0D2`), tempo de permanência decorrido (ex.: *"34 min"*), valor subtotal acumulado em negrito (ex.: *"R$ 186,40"*). Ao tocar, navega para a comanda da mesa.
+    * **Mesa com Conta Pedida:** Borda destacada em Tomate (`#C4391D`, 2px), badge `Conta pedida` (`#FBE3DC`). Sinaliza urgência no fechamento para o garçom e para o caixa.
+  * **Botão Flutuante (FAB):** `+ Abrir mesa` posicionado estrategicamente na **Thumb Zone** (canto inferior direito), cor Mostarda (`#F2A81D`).
+  * **Barra de Navegação Inferior:** 4 destinos com ícones e rótulos legíveis: `Mesas` (ativa), `Comandas`, `Cozinha` e `Perfil`.
+
+### 3.2. Tela 2 — Modo Garçom: Comanda da Mesa e Lançamento de Pedidos (Mobile)
+* **Estrutura Visual:**
+  * **Barra Superior:** Botão voltar (`<`), identificação da mesa (*"Mesa 2 · 3 pessoas · aberta há 34 min"*), botão secundário *"Transferir"*.
+  * **Banner de Confirmação:** Card com fundo verde suave (`#DDF0E4`) informando os pedidos já processados: *"4 itens enviados · Cozinha confirmou às 19:42 · R$ 186,40"*.
+  * **Filtro de Categorias:** Carrossel horizontal de chips pill (`Bebidas`, `Lanches`, `Porções`, `Sobremesas`).
+  * **Lista de Produtos do Cardápio:**
+    * Placeholder de foto com tint pastel suave.
+    * Nome do item em negrito e preço unitário.
+    * **Controle de Quantidade (Stepper):** Botões `+` e `-` com área de toque mínima de `44px`.
+    * **Item Esgotado:** Opacidade reduzida para `0.55`, badge `Esgotado` em vermelho suave (`#FBE3DC`), interação bloqueada.
+  * **Rodapé Fixo (Floating Bottom Action):**
+    * Contador e valor dos novos itens pendentes de envio: *"3 novos itens · R$ 44,00"*.
+    * **Botão Primário:** `Enviar para a cozinha` (60px de altura, Mostarda `#F2A81D`, texto em `#2B2019`).
+    * **Botão Secundário:** `Pedir a conta` (fundo branco, borda suave), que aciona o fechamento preliminar com o caixa.
+
+### 3.3. Tela 3 — Modo Caixa / Balcão: Ponto de Venda Operacional (Desktop)
+* **Dispositivo Alvo:** Telas widescreen (1440×900 px), operado via mouse, leitor de código de barras, teclado ou touch.
+* **Estrutura Visual:**
+  * **Barra Lateral Esquerda (88px):** Fundo Café Profundo (`#3A2A21`), ícone Vapt e navegação vertical: `Venda` (ativo), `Mesas`, `Pedidos`, `Caixa`, `Ajustes`.
+  * **Área Superior (Header):**
+    * Campo de busca global com atalho: `Buscar item ou ler código de barras (F2)`.
+    * Indicadores de hardware e rede: `Sincronizado` (verde), `Impressora cozinha` (status operacional), operador ativo (*"Ana L. Caixa 01"*).
+  * **Painel Central (Catálogo de Venda):**
+    * Abas em chips: `Todos`, `Lanches`, `Porções`, `Bebidas`, `Sobremesas`, `Combos`.
+    * Grade responsiva de 4 colunas com cards de produtos (foto tinted, título, preço em destaque e badge de esgotado quando aplicável).
+  * **Painel Lateral Direito (Conferência do Pedido · 440px):**
+    * Cabeçalho: Identificação da comanda (*"Pedido 0482 · Balcão · senha 27"*), botão para vincular cliente por CPF.
+    * Linhas do pedido com detalhes de observação, steppers individuais de ajuste de quantidade e subtotal da linha.
+    * Bloco Financeiro de Fechamento:
+      * `Subtotal`: `R$ 131,80`
+      * `Gorjeta 10%`: Switch acessível com valor calculado (`R$ 13,18`). Ligar/desligar recalcula instantaneamente o total via API.
+      * `Total`: `R$ 144,98` em destaque tipográfico (32px / 800).
+    * Botões de Ação: `Desconto`, `Cancelar` (destrutivo) e **`Cobrar R$ 144,98`** (botão grande em Mostarda, 68px de altura).
+  * **Rodapé de Atalhos de Teclado:** Guia de operação rápida (`F2 Buscar`, `F4 Cliente / CPF`, `F6 Desconto`, `F7 Nota fiscal`, `F8 Cobrar`).
+
+### 3.4. Tela 4 — Modo Caixa: Modal / Tela de Pagamento e Quitação
+* **Estrutura Visual em 3 Colunas:**
+  1. **Coluna Esquerda (Resumo da Venda):**
+     * Lista resumida dos itens consolidados com quantidades.
+     * Subtotal, taxa de serviço de 10% e Total.
+     * **Barra de Progresso de Quitação:** Indicador visual de saldo com *"Já pago: R$ 60,00"* e *"Falta pagar: R$ 84,98"*.
+     * Histórico de pagamentos já registrados.
+  2. **Coluna Central (Meios de Pagamento & Pix Dinâmico):**
+     * Seleção em abas: `Pix` (selecionado), `Crédito`, `Débito`, `Dinheiro`, `Vale-refeição`.
+     * Campo com o valor específico a ser cobrado nesta parcela (`R$ 84,98`).
+     * **Área Pix:** Renderização do QR Code oficial para pagamento, aviso com cronômetro regressivo (*"Aguardando pagamento · expira em 04:32"*), botões de suporte (*Copiar código Pix*, *Cancelar cobrança*).
+  3. **Coluna Direita (Opções Fiscais e Emissão):**
+     * Campo para CPF/CNPJ do cliente na nota (opcional).
+     * Switches para `Emitir NFC-e` e `Imprimir via do cliente`.
+  4. **Ação Final:** Botão `Concluir venda`. Desabilitado enquanto houver saldo pendente. Habilita em Mostarda com o total integralmente quitado.
+
+### 3.5. Tela 5 — Modo Gestão e BI: Dashboard Executivo (Analytics)
+* **Dispositivo Alvo:** Desktop gerencial (1440×900 px).
+* **Estrutura Visual:**
+  * **4 Cards de KPIs Executivos:** Faturamento Hoje, Pedidos Realizados, Ticket Médio, Tempo Médio de Preparo (KDS).
+  * **Gráficos e Detalhamento:** Pedidos por Hora, Meios de Pagamento, Curva ABC de Produtos e Alertas de Ruptura de Estoque.
 
 ---
 
-## 4. Jornada 1 — Visão do Garçom (Mobile PWA & Smart POS)
+## 4. Mapeamento entre Elementos Visuais e a API REST do PDV Core
 
-### 4.1. Objetivos Operacionais
-- Visualizar em menos de 1 segundo quais mesas estão livres (`verde fechado`), ocupadas (`âmbar queimado`) ou aguardando pagamento (`azul sóbrio`).
-- Lançar itens rapidamente com filtro retangular por categoria (`[Todas]`, `[Bebidas]`, `[Porções]`, `[Lanches]`) e observações rápidas por chips retangulares (`[Sem cebola]`, `[Ao ponto]`, `[Gelo e limão]`).
-- Ajustar quantidades (`[-]` / `[+]`) com alvos de toque de 44px e solicitar fechamento da mesa sem sair da tela.
-
-### 4.2. Wireframe Estrutural — Mapa de Mesas e Lançamento Mobile
-
-```text
-+--------------------------------------------------+   +--------------------------------------------------+
-| VaptPDV • Garçom: Carlos              Online     |   | [<-] Mesa 07 • Carlos              [ ABERTA ]    |
-|--------------------------------------------------|   | Cliente: Mateus                      Comanda #42 |
-| PRONTO NO BAR: Mesa 07 (Cerveja Pilsen)     [OK] |   |--------------------------------------------------|
-|--------------------------------------------------|   | ITENS DA COMANDA (3)           Parcial: R$ 88,90 |
-| [Todas (30)] [Livres (18)] [Minhas (5)]          |   |--------------------------------------------------|
-|                                                  |   | Cerveja Pilsen 600ml                             |
-|  +-----------+  +-----------+  +-----------+     |   | 2x   R$ 25,00              [ - ]  2  [ + ] R$ 50,00 |
-|  |  MESA 01  |  |  MESA 02  |  |  MESA 03  |     |   |                                                  |
-|  |  LIVRE    |  |  ABERTA   |  |  FECHADA  |     |   | Porção Batata Frita                              |
-|  |           |  | R$ 64,00  |  | R$ 132,00 |     |   | 1x   R$ 38,90   Obs: crocante    [ - ] 1 [ + ] R$ 38,90 |
-|  | [ Abrir ] |  | 18 min    |  | No Caixa  |     |   |--------------------------------------------------|
-|  +-----------+  +-----------+  +-----------+     |   | ADICIONAR ITEM:                                  |
-|                                                  |   | [ Buscar produto...                            ] |
-|  +-----------+  +-----------+  +-----------+     |   | [Bebidas] [Porções] [Lanches] [Todos]            |
-|  |  MESA 04  |  |  MESA 07  |  |  MESA 08  |     |   |--------------------------------------------------|
-|  |  LIVRE    |  |  ABERTA   |  |  LIVRE    |     |   | Refrigerante Lata 350ml (Est: 42)       R$  7,50 |
-|  |           |  | R$ 88,90  |  |           |     |   | Obs rápida: [Gelo e limão]               [ + ]   |
-|  | [ Abrir ] |  | 22 min    |  | [ Abrir ] |     |   | Espetinho Alcatra (Est: 15)             R$ 14,00 |
-|  +-----------+  +-----------+  +-----------+     |   | Obs rápida: [Ao ponto]                   [ + ]   |
-|--------------------------------------------------|   |--------------------------------------------------|
-| [ Mesas ]                     [ Avisos KDS (1) ] |   | [ Confirmar Pedido e Solicitar Pré-Conta ]       |
-+--------------------------------------------------+   +--------------------------------------------------+
-```
+| Ação no Frontend | Método HTTP | Rota da API Backend | Dados Enviados / Recebidos |
+| :--- | :---: | :--- | :--- |
+| **Carregar Cardápio** | `GET` | `/produtos?ativo=true` | Recebe catálogo com IDs, nomes, preços e estoque atual. |
+| **Carregar Salão (Mesas)**| `GET` | `/comandas?status=aberta` | Recebe comandas ativas para pintar as mesas ocupadas e calcular tempo aberto. |
+| **Abrir Mesa (FAB)** | `POST` | `/comandas` | Envia `{ mesa, garcom_id, nome_cliente }`. Recebe comanda criada (`201`). |
+| **Lançar Pedido (Cozinha)**| `POST` | `/comandas/:id/itens` | Envia `{ produto_id, quantidade }` por item selecionado. |
+| **Ajustar Quantidade (+/-)**| `PATCH` | `/comandas/:id/itens/:itemId`| Envia `{ quantidade }`. Valida estoque em tempo real. |
+| **Remover Item da Conta** | `DELETE` | `/comandas/:id/itens/:itemId`| Remove item de comanda aberta (`204`). |
+| **Alternar 10% / Fechar**| `POST` | `/comandas/:id/fechar` | Envia `{ aplicar_taxa_servico: boolean }`. Backend calcula subtotal, taxa e total. |
+| **Pagar e Liberar Mesa** | `POST` | `/comandas/:id/pagar` | Envia `{ forma_pagamento }`. Baixa estoque atomicamente e libera a mesa. |
+| **Cancelar Comanda** | `POST` | `/comandas/:id/cancelar` | Cancela comanda aberta liberando a mesa sem alterar o estoque. |
+| **Indicadores do BI** | `GET` | `/analytics/...` | Consulta métricas consolidadas (Módulo 2+). |
 
 ---
 
-## 5. Jornada 2 — Visão do Caixa (Desktop / Tablet Landscape)
+## 5. Diretrizes de Acessibilidade e Resiliência Operacional
 
-### 5.1. Objetivos Operacionais
-- Operação em tela dividida (*Split-View Master-Detail*): à esquerda (35%), a fila de comandas ativas; à direita (65%), o extrato detalhado da comanda.
-- **Conferência e Fechamento (`POST /comandas/:id/fechar`):** Exibir os itens com preços congelados no lançamento (RN04) e switch retangular sóbrio para a Taxa de Serviço de 10% (RN05, RN12).
-- **Recebimento e Pagamento (`POST /comandas/:id/pagar`):** Registro imediato nas formas `dinheiro`, `pix` ou `cartao`, com suporte a divisão de pagamento (*Split Payment*), vínculo opcional de CPF para cashback (5%) e baixa de estoque atômica.
-
-### 5.2. Wireframe Estrutural — Painel do Caixa (Estilo Stripe Dashboard)
-
-```text
-+----------------------------------------------------------------------------------------------------------+
-| VaptPDV • Módulo Caixa                                      Satélites: [KDS: OK] [Fidelidade: OK] [BI: OK]|
-+----------------------------------------+-----------------------------------------------------------------+
-| FILA DE COMANDAS                       | EXTRATO DA COMANDA #42 — MESA 07                    [ FECHADA ] |
-| [ Buscar Mesa ou Comanda...          ] | Garçom: Carlos (#3)   | Cliente: Mateus   | Aberta às: 20:10    |
-| Filtros: [Ativas (8)] [Fechadas (3)]   |-----------------------------------------------------------------|
-|----------------------------------------| ITEM                                   QTD   UNITÁRIO  SUBTOTAL |
-| MESA 07 — Comanda #42                  | Cerveja Pilsen 600ml                     2   R$ 25,00  R$ 50,00 |
-| Cliente: Mateus             R$ 97,79   | Porção Batata Frita                      1   R$ 38,90  R$ 38,90 |
-| Status: FECHADA (Aguardando Pagamento) |-----------------------------------------------------------------|
-|----------------------------------------| RESUMO FINANCEIRO (Decimal Exato — Backend Single Source)       |
-| MESA 03 — Comanda #39                  | Subtotal dos Itens:                                    R$ 88,90 |
-| Cliente: Ana               R$ 132,00   | [x] Taxa de Serviço Opcional (10%):                    R$  8,89 |
-| Status: FECHADA                        | --------------------------------------------------------------- |
-|----------------------------------------| TOTAL A RECEBER:                                       R$ 97,79 |
-| MESA 02 — Comanda #44                  |-----------------------------------------------------------------|
-| Cliente: Balcão             R$ 64,00   | PROGRAMA DE FIDELIDADE (fidelidade-service):                    |
-| Status: ABERTA (No Salão)              | CPF / Celular: [ 84999990000 ] -> Gera +R$ 4,45 em Cashback     |
-|----------------------------------------|-----------------------------------------------------------------|
-| MESA 11 — Comanda #45                  | FORMA DE PAGAMENTO:                                             |
-| Cliente: João               R$ 45,50   | [ Dinheiro ]            [ PIX ]            [ Cartão ]           |
-| Status: ABERTA                         |                                                                 |
-|                                        | [ CONFIRMAR PAGAMENTO E LIBERAR MESA (R$ 97,79) ]               |
-+----------------------------------------+-----------------------------------------------------------------+
-```
+1. **Contraste Mínimo Garantido (WCAG 2.1 AA):** Relação $> 10:1$ entre Café `#2B2019` e Creme `#FBF7F1`.
+2. **Navegação por Teclado no Caixa:** Atalhos de teclado (F2, F4, F6, F7, F8) com `preventDefault()` configurado.
+3. **Resiliência e Feedback de Conexão:** Estados de loading com esqueletos pulsantes (`skeleton screen`), revalidações em background via TanStack Query.
 
 ---
 
-## 6. Jornada 3 — Painel KDS da Cozinha e Bar (TV / Tablet Horizontal)
+## 6. Arquitetura Técnica da Aplicação Frontend Completa (`frontend/`)
 
-### 6.1. Objetivos Operacionais (`kds-service`)
-- Quadro Kanban plano de 3 colunas em fundo neutro Slate-50 (`#F8FAFC`).
-- Tickets brancos retangulares delimitados exclusivamente por bordas sólidas de `1px solid #E2E8F0`.
-- Cronômetro tabular `08:42` e botão de avanço em 1 toque na base do ticket.
+A aplicação frontend do **VaptPDV** é desenvolvida como uma Single Page Application (SPA) / Progressive Web App (PWA) moderna no diretório dedicado `/frontend` da raiz do repositório, garantindo desacoplamento total, tipagem estrita de ponta a ponta e máxima ergonomia operacional.
 
-### 6.2. Wireframe Estrutural — Painel KDS
+### 6.1. Stack Tecnológica Oficial do Frontend
 
-```text
-+----------------------------------------------------------------------------------------------------------+
-| VAPT-KDS • PREPARO EM TEMPO REAL                   Estação: [ Todas ] [ Cozinha (4) ] [ Bar (2) ]        |
-| Tempo Médio: 08m 20s   |   Na Fila: 6 itens   |   Broker RabbitMQ: Conectado                             |
-+-----------------------------------+-----------------------------------+----------------------------------+
-| 1. RECEBIDOS (3)                  | 2. EM PREPARO (2)                 | 3. PRONTOS P/ ENTREGA (1)        |
-+-----------------------------------+-----------------------------------+----------------------------------+
-| +-------------------------------+ | +-------------------------------+ | +------------------------------+ |
-| | MESA 11 • #45     TEMPO: 21:14| | | MESA 02 • #44     TEMPO: 12:40| | | MESA 07 • #42     TEMPO: 11:00| |
-| | Garçom: Carlos       [COZINHA]| | | Garçom: Pedro        [COZINHA]| | | Garçom: Carlos       [COZINHA]| |
-| |-------------------------------| | |-------------------------------| | |------------------------------| |
-| | 2x Hambúrguer Artesanal       | | | 1x Isca de Peixe              | | | 1x Porção Batata Frita       | |
-| | Obs: Sem cebola, ao ponto     | | | Obs: Molho tártaro à parte    | | | Status: Garçom Notificado    | |
-| |                               | | |                               | | |                              | |
-| | [ INICIAR PREPARO ]           | | | [ MARCAR COMO PRONTO ]        | | | [ ENTREGUE AO SALÃO ]        | |
-| +-------------------------------+ | +-------------------------------+ | +------------------------------+ |
-+-----------------------------------+-----------------------------------+----------------------------------+
-```
-
----
-
-## 7. Jornada 4 — Gestão de Cardápio, Estoque e Equipe
-
-### 7.1. Wireframe Estrutural — Gestão de Produtos e Estoque (Estilo Stripe)
-
-```text
-+----------------------------------------------------------------------------------------------------------+
-| VaptPDV • Retaguarda & Gestão                       Abas: [ Produtos & Estoque ] [ Equipe ] [ BI ]       |
-+----------------------------------------------------------------------------------------------------------+
-| PRODUTOS CADASTRADOS (Fonte: vapt-pdv-core)                                      [ + Novo Produto ]      |
-| [ Buscar produto por nome...             ]   Filtros: [ Todos ] [ Bebidas ] [ Porções ] [ Lanches ]      |
-|----------------------------------------------------------------------------------------------------------|
-| NOME DO PRODUTO               CATEGORIA    PREÇO (R$)  ESTOQUE ATUAL  ESTOQUE MÍNIMO  SITUAÇÃO   AÇÕES   |
-| Cerveja Pilsen 600ml          Bebidas        R$ 25,00           4 un            6 un  [ Ativo ]  [Editar]|
-| Porção Batata Frita           Porções        R$ 38,90          18 un            5 un  [ Ativo ]  [Editar]|
-| Hambúrguer Artesanal          Lanches        R$ 32,00          12 un            5 un  [ Ativo ]  [Editar]|
-| Refrigerante Lata 350ml       Bebidas        R$  7,50          42 un           12 un  [ Ativo ]  [Editar]|
-+----------------------------------------------------------------------------------------------------------+
-```
-
----
-
-## 8. Jornada 5 — Dashboard Analytics & BI (`analytics-bi-service`)
-
-### 8.1. Wireframe Estrutural — Painel OLAP
-
-```text
-+----------------------------------------------------------------------------------------------------------+
-| INDICADORES DO TURNO (Fonte: analytics-bi-service / OLAP)                                                |
-| +-----------------------+  +-----------------------+  +-----------------------+  +---------------------+ |
-| | RECEITA BRUTA         |  | COMANDAS PAGAS        |  | TICKET MÉDIO          |  | TAXA SERVIÇO (10%)  | |
-| | R$ 4.850,90           |  | 52 comandas           |  | R$ 93,28              |  | R$ 440,99           | |
-| +-----------------------+  +-----------------------+  +-----------------------+  +---------------------+ |
-|----------------------------------------------------------------------------------------------------------|
-| ALERTAS DE ESTOQUE MÍNIMO                                                                                |
-| • Cerveja Pilsen 600ml — Estoque Atual: 4 un (Mínimo: 6 un)                       [ Repor Estoque ]      |
-|----------------------------------------------------------------------------------------------------------|
-| CURVA ABC DE PRODUTOS                              | DESEMPENHO DE GARÇONS                               |
-| CLASSE  PRODUTO                 QTD    RECEITA     | POS  GARÇOM           COMANDAS   VENDAS    COMISSÃO |
-| [ A ]   Cerveja Pilsen 600ml    110x   R$ 2.750,00 | 1º   Carlos (#3)      24 mesas   R$ 2.340  R$ 234,00|
-| [ A ]   Porção Batata Frita      32x   R$ 1.244,80 | 2º   Pedro (#5)       18 mesas   R$ 1.680  R$ 168,00|
-| [ B ]   Hambúrguer Artesanal     18x   R$   540,00 | 3º   Mariana (#6)     10 mesas   R$   830  R$  83,00|
-+----------------------------------------------------+-----------------------------------------------------+
-```
-
----
-
-## 9. Matriz de Integração Frontend ↔ Endpoints da API
-
-| Visão / Componente UI | Ação do Usuário | Endpoint Consumido | Comportamento em Caso de Falha de Satélite |
+| Camada | Tecnologia | Versão / Configuração | Papel e Justificativa Arquitetural |
 | :--- | :--- | :--- | :--- |
-| **Mapa de Mesas** | Listar ocupação do salão | `GET /comandas?status=aberta` e `GET /comandas?status=fechada` | Operação local ao Core; sem dependência externa. |
-| **Modal Abrir Mesa** | Abrir comanda em mesa livre | `POST /comandas` | Valida garçom e unicidade de mesa aberta no PostgreSQL. |
-| **Lançamento de Item** | Adicionar prato à mesa | `POST /comandas/:id/itens` | Grava cópia de nome e preço (`RN04`). No Mód. 4 emite evento RabbitMQ. |
-| **Fechamento de Mesa** | Aplicar/dispensar 10% | `POST /comandas/:id/fechar` | Cálculo Decimal exato no Core; comanda passa a ser imutável para itens. |
-| **Pagamento e Baixa** | Registrar Dinheiro/PIX/Cartão | `POST /comandas/:id/pagar` | Baixa estoque atômica idempotente; libera a mesa instantaneamente. |
-| **Quadro KDS** | Avançar status de preparo | `PATCH /kds/fichas/:id/status` | Dispara `item.pronto` para o salão via mensageria/REST. |
-| **Aba Analytics BI** | Consultar métricas OLAP | `GET /analytics/resumo` | Se indisponível, exibe badge sóbrio sem afetar o caixa. |
+| **Runtime & Build** | `Vite` | `v6+` | Servidor de desenvolvimento instantâneo com Hot Module Replacement (HMR) e build de produção via Rollup/esbuild gerando assets estáticos altamente otimizados. |
+| **Core & Framework** | `React` + `TypeScript` | `React 19` / `TS 5.7+` | Biblioteca líder de componentes com tipagem estrita de ponta a ponta compartilhando interfaces DTO da API. |
+| **Design System & CSS** | `Tailwind CSS` | `v3.4+` | Framework utilitário configurado com os tokens semânticos exatos de `DESIGN.md` (Creme `#FBF7F1`, Mostarda `#F2A81D`, Café `#2B2019`, Manjericão `#2F7D4F`, Tomate `#C4391D`). |
+| **Ícones do Sistema** | `Lucide React` | `latest` | Ícones minimalistas limpos em SVG vetorizado (sem emojis, alinhado à diretriz de zero poluição visual). |
+| **Data Fetching & Cache**| `TanStack Query` | `v5` (`@tanstack/react-query`) | Gerenciamento de estado assíncrono do servidor: cache inteligente de comandas/produtos, revalidação automática, mutations atômicas e sincronização em segundo plano com a API Fastify. |
+| **Estado Global do Cliente**| `Zustand` | `v5` (`zustand`) | Store leve e rápida para estados puramente locais da sessão: modo operacional ativo (`garcom` vs `caixa`), mesa selecionada, operador/garçom ativo e carrinho temporário de novos itens. |
+| **Formulários & Schemas**| `React Hook Form` + `Zod`| `@hookform/resolvers` + `zod` | Validação declarativa em tempo real para formulários de cadastros de produtos (validação de preços decimais positivos e estoque) e colaboradores. |
+| **Capacidade PWA / Mobile**| `vite-plugin-pwa` | `latest` | Configuração de Service Worker, web app manifest e suporte a instalação em tela cheia nos smartphones Android/iOS dos garçons. |
+
+### 6.2. Árvore de Diretórios Estruturada (`frontend/`)
+
+```
+frontend/
+├── public/
+│   ├── favicon.ico
+│   ├── icon-192.png
+│   ├── icon-512.png
+│   └── manifest.json             # Manifest PWA (standalone, theme-color #2B2019)
+├── src/
+│   ├── api/                      # Clientes HTTP e Custom Hooks TanStack Query
+│   │   ├── client.ts             # Instância Fetch/Axios com base /api e tratamento padronizado de ErroDominio
+│   │   ├── useComandas.ts        # Hooks: useComandas(), useComanda(id), useAbrirComanda(), useLancarItens(), useFecharComanda(), usePagarComanda()
+│   │   ├── useProdutos.ts        # Hooks: useProdutos(), useCriarProduto(), useInativarProduto()
+│   │   └── useUsuarios.ts        # Hooks: useUsuarios(), useCriarUsuario(), useInativarUsuario()
+│   ├── components/               # Componentes Reutilizáveis do Design System
+│   │   ├── ui/
+│   │   │   ├── Button.tsx        # Botões padronizados (Primary Mostarda, Secondary, Danger, Ghost)
+│   │   │   ├── Input.tsx         # Inputs com anel de foco Café e label flutuante
+│   │   │   ├── Modal.tsx         # Modal com backdrop blur e acessibilidade ARIA
+│   │   │   ├── Stepper.tsx       # Controle de quantidade (+ / -) com alvo de toque >= 44px
+│   │   │   ├── Badge.tsx         # Pills de status (Livre, Ocupada, Conta pedida, Esgotado)
+│   │   │   └── ToggleSwitch.tsx  # Switch acessível para gorjeta de 10%
+│   │   └── layout/
+│   │       ├── TopNav.tsx        # Barra superior com logo Vapt, status de conexão e operador ativo
+│   │       ├── ModeSwitcher.tsx  # Alternador de abas entre Modo Garçom e Modo Caixa
+│   │       └── ToastContainer.tsx# Notificações flutuantes de sucesso e erro
+│   ├── features/                 # Módulos de Domínio e Fluxos Operacionais
+│   │   ├── garcom/
+│   │   │   ├── SalaoMesasGrid.tsx   # Grade responsiva de mesas (2 colunas no mobile) com filtros por status
+│   │   │   ├── ComandaMesaView.tsx  # Tela de atendimento da mesa, banner de confirmação e ações
+│   │   │   ├── CardapioList.tsx     # Carrossel de categorias e lista de produtos com steppers
+│   │   │   └── AbrirMesaModal.tsx   # Modal rápido de abertura de mesa vinculado a garçom ativo
+│   │   ├── caixa/
+│   │   │   ├── BalcaoView.tsx       # Layout desktop widescreen (Toolbar + Catálogo + ComandaPanel)
+│   │   │   ├── CatalogoGrid.tsx     # Grade de produtos em 4 colunas com busca por atalho F2
+│   │   │   ├── ComandaPanel.tsx     # Painel lateral de 440px com resumo financeiro, switch de 10% e botão Cobrar (F8)
+│   │   │   └── ModalPagamento.tsx   # Modal de quitação em 3 colunas (Resumo, Meios de Pagamento com Pix QR Code e Fiscal)
+│   │   └── admin/
+│   │       └── CadastrosModal.tsx   # Gestão rápida de produtos e colaboradores em tempo de execução
+│   ├── store/
+│   │   └── useAppStore.ts        # Zustand Store: mode, mesaAtiva, garcomAtivoId, carrinhoNovosItens
+│   ├── types/
+│   │   └── index.ts              # Definições de tipos TypeScript (Comanda, ItemComanda, Produto, Usuario)
+│   ├── App.tsx                   # Roteamento condicional e orquestração dos modos operacionais
+│   ├── index.css                 # Importação do Tailwind CSS e fontes Plus Jakarta Sans
+│   └── main.tsx                  # Ponto de entrada com QueryClientProvider do TanStack Query
+├── index.html                    # Shell HTML com meta viewport mobile e fontes Google Fonts
+├── tailwind.config.js            # Extensão de cores e fontes do DESIGN.md
+├── tsconfig.json                 # Configuração TypeScript estrita
+├── vite.config.ts                # Configuração do Vite, Proxy para :3000 e plugin PWA
+└── package.json                  # Manifesto de dependências do frontend
+```
+
+### 6.3. Contratos Técnicos de Infraestrutura Frontend
+
+#### 1. Contrato de Proxy Reverso em Desenvolvimento (`vite.config.ts`)
+Para garantir fluxo de desenvolvimento sem atritos com CORS e compatibilidade idêntica ao ambiente de produção:
+```typescript
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import { VitePWA } from 'vite-plugin-pwa';
+
+export default defineConfig({
+  plugins: [
+    react(),
+    VitePWA({
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png'],
+      manifest: {
+        name: 'VaptPDV — Sistema de Ponto de Venda',
+        short_name: 'VaptPDV',
+        description: 'PDV e Operação de Salão para Bares e Lanchonetes',
+        theme_color: '#2B2019',
+        background_color: '#FBF7F1',
+        display: 'standalone',
+        orientation: 'portrait',
+        icons: [
+          { src: '/icon-192.png', sizes: '192x192', type: 'image/png' },
+          { src: '/icon-512.png', sizes: '512x512', type: 'image/png' }
+        ]
+      }
+    })
+  ],
+  server: {
+    port: 5173,
+    proxy: {
+      '/comandas': { target: 'http://localhost:3000', changeOrigin: true },
+      '/produtos': { target: 'http://localhost:3000', changeOrigin: true },
+      '/usuarios': { target: 'http://localhost:3000', changeOrigin: true },
+      '/health': { target: 'http://localhost:3000', changeOrigin: true },
+      '/docs': { target: 'http://localhost:3000', changeOrigin: true }
+    }
+  }
+});
+```
+
+#### 2. Contrato de Build e Deploy em Nuvem (AWS EC2 / Produção)
+* **Desenvolvimento Local:** `npm run dev:frontend` (Vite dev server na porta `:5173`) consumindo a API Fastify rodando na `:3000`.
+* **Deploy de Produção:** O comando de build do frontend (`npm run build:frontend`) gera o bundle estático minificado em `frontend/dist/`. No backend Fastify, o plugin `@fastify/static` serve diretamente `frontend/dist/` na porta `:3000`, eliminando necessidade de servidores web adicionais e mantendo o deploy na AWS EC2 enxuto via PM2.

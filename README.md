@@ -1,125 +1,103 @@
-# VaptPDV - Sistema de Ponto de Venda (Módulo 1: Computação em Nuvem)
+# VaptPDV
 
-> Trabalho prático e incremental desenvolvido para a disciplina de **Sistemas Distribuídos**
->
-> **Departamento de Ciência da Computação (DCC / UERN)**
->
-> **Integrantes:** Kaio França e Mateus Neri
+> Trabalho prático e incremental desenvolvido para a disciplina de **Sistemas Distribuídos**  
+> **Departamento de Ciência da Computação (DCC / UERN)**  
+> **Docentes:** Profa. Dra. Glaucia Melissa e Profa. Ma. Luiziane Paulino dos Santos  
+> **Discentes:** Kaio França e Mateus Neri  
 
-## Visão Geral do Projeto
+---
 
-O **VaptPDV** é um sistema de ponto de venda (PDV) para bares, botecos e lanchonetes de pequeno porte. Ele substitui comanda em papel por registros digitais unificados: o garçom abre uma comanda por mesa, lança o consumo, o caixa fecha a conta e registra o pagamento, e o gerente acompanha o histórico do estabelecimento.
+## 1. Visão geral do projeto
 
-Neste **Módulo 1 (Computação em Nuvem / IaaS)**, foi implantada a primeira versão funcional da API REST em uma instância de nuvem (AWS EC2), acompanhada de um banco de dados relacional PostgreSQL hospedado na própria máquina virtual, com variáveis de ambiente isoladas e documentação interativa OpenAPI/Swagger acessível publicamente.
+O **VaptPDV** é um sistema distribuído de Ponto de Venda (PDV) para bares, botecos e lanchonetes de pequeno e médio porte. Ele substitui comandas manuais de papel por registros digitais unificados e confiáveis:
+- O **Garçom** abre comanda por mesa livre e lança pedidos com garantia de produto ativo e congelamento imediato de preço;
+- A **Cozinha/Bar** recebe os pedidos para preparo;
+- O **Caixa** fecha a conta aplicando opcionalmente a taxa de serviço de 10%, confere os valores e recebe o pagamento (`dinheiro`, `pix`, `cartao`);
+- O **Estoque** tem baixa transacional, atômica e idempotente no ato do pagamento;
+- O **Gerente** acompanha o histórico de consumo, faturamento e relatórios.
 
-## API em Execução na Nuvem
+Neste **Módulo 1 (Computação em Nuvem / IaaS)**, o **PDV Core** foi construído e implantado em máquina virtual na nuvem (**AWS EC2**), acompanhado de um banco relacional **PostgreSQL** instalado diretamente na VM, arquitetura em camadas desacopladas (Entity, Repository, Service, Controller e Rotas), documentação interativa OpenAPI/Swagger pública e Frontend Web/PWA integrado (Modo Garçom mobile-first e Modo Caixa desktop) servido na própria raiz.
 
-A API do VaptPDV está totalmente implantada e disponível publicamente na AWS:
+---
 
-* **Documentação Interativa (Swagger / OpenAPI):** <http://54.234.157.236:3000/docs>
+## 2. Aplicação em execução na nuvem (AWS EC2)
 
-* **Base URL da API:** `http://54.234.157.236:3000`
+A API e interface do VaptPDV estão disponíveis publicamente na AWS:
 
-## Stack Tecnológica
+* **Aplicação Web / PDV Core:** [http://54.234.157.236:3000](http://54.234.157.236:3000)
+* **Documentação Interativa (Swagger / OpenAPI):** [http://54.234.157.236:3000/docs](http://54.234.157.236:3000/docs)
+* **Verificação de Saúde (Health Check):** [http://54.234.157.236:3000/health](http://54.234.157.236:3000/health)
 
-* **Linguagem:** [TypeScript](https://www.typescriptlang.org/) (Node.js v20 LTS)
+### Vídeo de demonstração (Módulo 1)
+* [Pasta do Vídeo no Google Drive](https://drive.google.com/drive/folders/1GzLecg9bSraN3ZjB7usL9Mg3I03I1uzm?usp=sharing)  
+*(Demonstra a aplicação publicada na AWS EC2 respondendo a requisições, conectando ao banco PostgreSQL e comprovando o acesso público).*
 
-* **Framework Web:** [Fastify](https://fastify.dev/) (Alta performance e validação declarativa de schemas)
+---
 
-* **ORM:** [Prisma ORM](https://www.prisma.io/)
+## 3. Stack tecnológica
 
-* **Banco de Dados:** [PostgreSQL](https://www.postgresql.org/)
-
-* **Documentação de API:** Swagger / OpenAPI (`@fastify/swagger` e `@fastify/swagger-ui`)
-
-* **Testes Automatizados:** [Vitest](https://vitest.dev/)
-
-* **Hospedagem / Nuvem (IaaS):** [AWS EC2](https://aws.amazon.com/ec2/) (Ubuntu Server)
-
+* **Linguagem & Runtime:** [TypeScript 5](https://www.typescriptlang.org/) / [Node.js 20 LTS](https://nodejs.org/)
+* **Framework Web:** [Fastify 5](https://fastify.dev/) (Alta performance e validação declarativa via TypeBox)
+* **ORM & Banco de Dados:** [Prisma ORM 6](https://www.prisma.io/) com [PostgreSQL 16](https://www.postgresql.org/) (`NUMERIC(10,2)` para precisão monetária contábil)
+* **Frontend Web/PWA:** Servido via `@fastify/static` (Modo Garçom mobile-first e Modo Caixa desktop)
+* **Testes Automatizados:** [Vitest](https://vitest.dev/) (135 testes automatizados com cobertura integral de regras de negócio)
+* **Hospedagem Cloud (IaaS):** [AWS EC2](https://aws.amazon.com/ec2/) (Ubuntu Server LTS)
 * **Gerenciador de Processos:** [PM2](https://pm2.keymetrics.io/)
 
-## Vídeo de Demonstração (Módulo 1)
+---
 
-> [Link do Vídeo](https://drive.google.com/drive/folders/1GzLecg9bSraN3ZjB7usL9Mg3I03I1uzm?usp=sharing)
+## 4. Documentação oficial de engenharia
 
-*(O vídeo demonstra a API publicada na AWS EC2 respondendo a requisições de CRUD, conectando ao banco PostgreSQL e comprovando o acesso público via URL do servidor).*
+O projeto conta com documentação formal na pasta [`docs/engenharia/`](docs/engenharia/):
 
-## Instruções de Execução Local
+| Documento | Descrição |
+| :--- | :--- |
+| [01-visao-e-escopo.md](docs/engenharia/01-visao-e-escopo.md) | Problema, Personas, Matriz de Valor, KPIs e Divisão de Papéis |
+| [02-especificacao-requisitos-srs.md](docs/engenharia/02-especificacao-requisitos-srs.md) | SRS IEEE 830: 33 RFs, 22 Regras de Negócio e 12 RNFs |
+| [03-arquitetura-c4-model.md](docs/engenharia/03-arquitetura-c4-model.md) | Modelo C4 (Contexto, Contêineres, Componentes e Implantação) e ADRs |
+| [04-modelo-dados-e-dominio.md](docs/engenharia/04-modelo-dados-e-dominio.md) | DDD, DER dos 4 Bancos, Dicionário de Dados e Índices Únicos Parciais |
+| [05-contrato-apis-e-eventos.md](docs/engenharia/05-contrato-apis-e-eventos.md) | Contratos REST JSON e Catálogo de Eventos RabbitMQ |
+| [08-ux-e-experiencia-frontend.md](docs/engenharia/08-ux-e-experiencia-frontend.md) | UX/UI Design System, 5 Telas Oficiais (Garçom, Caixa, KDS) e Mapeamento REST |
+
+---
+
+## 6. Instruções de execução local
 
 ### Pré-requisitos
-
 * Node.js (v20 ou superior)
-
-* NPM ou Yarn
-
-* Instância local ou contêiner do PostgreSQL
+* PostgreSQL (v14 ou superior local ou Docker)
 
 ### Passo a Passo
 
-1. **Clonar o repositório:**
-
-   ```
-   git clone https://github.com/usuario/vapt-pdv.git
-   cd vapt-pdv
-   
-   ```
-
-2. **Instalar as dependências:**
-
-   ```
+1. **Instalar as dependências:**
+   ```bash
    npm install
-   
    ```
 
-3. **Configurar o arquivo de ambiente:**
-
-   ```
+2. **Configurar as variáveis de ambiente:**
+   ```bash
    cp .env.example .env
-   
    ```
+   *Edite a variável `DATABASE_URL` no `.env` com os dados de conexão do seu PostgreSQL local.*
 
-   *Ajuste a variável `DATABASE_URL` no `.env` conforme suas credenciais locais do PostgreSQL.*
-
-4. **Executar as migrações do banco (Prisma):**
-
-   ```
+3. **Executar as migrações do banco (Prisma):**
+   ```bash
    npx prisma migrate dev
-   
    ```
 
-5. **Iniciar a aplicação em modo de desenvolvimento:**
-
+4. **Executar a suíte de testes automatizados:**
+   ```bash
+   npm test
    ```
+
+5. **Iniciar a aplicação em modo desenvolvimento:**
+   ```bash
    npm run dev
-   
    ```
+   Acesse a aplicação em `http://localhost:3000` e a documentação interativa em `http://localhost:3000/docs`.
 
-   A API estará acessível em `http://localhost:3000` e a documentação interativa em `http://localhost:3000/docs`.
-
-## Executando os Testes Automatizados
-
-Os testes automatizados foram construídos utilizando o **Vitest**.
-
-Para executar a suíte completa de testes unitários e de integração:
-
-```
-npm run test
-
-```
-
-Para executar os testes em modo contínuo (*watch mode*):
-
-```
-npm run test:watch
-
-```
-
-## Infraestrutura e Deploy na Nuvem (IaaS)
-
-1. Instância **AWS EC2** provisionada com sistema operacional Ubuntu Server.
-
-2. Instalação e configuração manual do servidor de banco de dados **PostgreSQL**.
-
-3. Liberação de regras de firewall nos *Security Groups* da AWS e `iptables` interno para a porta `3000`.
-
-4. Gerenciamento do processo em background via **PM2** (`pm2 start dist/server.js --name vaptpdv-api`), garantindo *uptime* contínuo e reinicialização automática.
+6. **Gerar build de produção:**
+   ```bash
+   npm run build
+   npm start
+   ```

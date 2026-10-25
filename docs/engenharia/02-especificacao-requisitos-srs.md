@@ -1,21 +1,17 @@
-# 02 — Especificação de Requisitos de Software (SRS)
+# 02 - Especificação de Requisitos de Software (SRS)
 
 | Metadado | Valor |
 | :--- | :--- |
-| **Projeto** | **VaptPDV** — Sistema Distribuído de Ponto de Venda para Bares e Lanchonetes |
-| **Padrão de Referência** | IEEE Std 830-1998 / ISO/IEC/IEEE 29148:2018 (Systems and Software Engineering — Life Cycle Processes — Requirements Engineering) |
-| **Versão** | 2.0.0 |
+| **Projeto** | **VaptPDV** |
 | **Data** | 21 de Outubro de 2026 |
-| **Instituição / Disciplina** | DCC/UERN — Sistemas Distribuídos (3ª Unidade) — Docentes: Profa. Glaucia Melissa e Profa. Luiziane Paulino |
 | **Equipe de Desenvolvimento** | Kaio França e Mateus Neri |
-| **Agentes BMad Responsáveis** | **Mary** (Business Analyst) & **John** (Product Manager) |
 
 ---
 
 ## 1. Introdução
 
 ### 1.1 Propósito deste Documento
-Esta Especificação de Requisitos de Software (**SRS**) define, de maneira completa, verificável e rastreável, os Requisitos Funcionais (**RF01 a RF33**), o Catálogo de Regras de Negócio (**RN01 a RN22**), os Requisitos Não Funcionais (**RNF01 a RNF12**) e os Casos de Uso Detalhados (**UC01 a UC08**) do sistema **VaptPDV**. Este documento serve como contrato técnico definitivo para implementação, testes automatizados, validação acadêmica nos 4 módulos de Sistemas Distribuídos e operação em nuvem AWS EC2.
+Esta Especificação de Requisitos de Software (**SRS**) define, de maneira completa, verificável e rastreável, os Requisitos Funcionais (**RF01 a RF34**), o Catálogo de Regras de Negócio (**RN01 a RN24**), os Requisitos Não Funcionais (**RNF01 a RNF12**) e os Casos de Uso Detalhados (**UC01 a UC08**) do sistema **VaptPDV**. Este documento serve como contrato técnico definitivo para implementação, testes automatizados, validação acadêmica nos 4 módulos de Sistemas Distribuídos e operação em nuvem AWS EC2.
 
 ### 1.2 Convenções, Acrônimos e Definições
 - **PDV Core:** Núcleo transacional do sistema (Frontend Web/PWA + Backend Fastify/TypeScript + Prisma + PostgreSQL em `:3000`, banco `vaptpdv_db`) responsável por Usuários, Produtos/Estoque e Comandas.
@@ -71,7 +67,7 @@ stateDiagram-v2
 | ID | Requisito Funcional | Descrição Técnica e Critérios de Aceitação | Prioridade | Módulo Alvo |
 | :--- | :--- | :--- | :--- | :--- |
 | **RF01** | **Gerenciar Produtos do Cardápio (CRUD + Inativação)** | O sistema deve permitir ao perfil `gerente` cadastrar (`POST /produtos`), listar com filtros de categoria e status (`GET /produtos?categoria=&ativo=`), consultar por ID (`GET /produtos/:id`), atualizar parcialmente (`PATCH /produtos/:id`) e inativar (`POST /produtos/:id/inativar`) produtos contendo `nome`, `categoria`, `preco` (`Decimal`), `estoque` (`Int >= 0`), `estoque_minimo` (`Int >= 0`) e `ativo` (`Boolean`). | Essencial | Módulo 1 |
-| **RF02** | **Gerenciar Usuários Operadores (CRUD + Inativação)** | O sistema deve permitir cadastrar (`POST /usuarios`), listar por perfil e status (`GET /usuarios?perfil=&ativo=`), consultar (`GET /usuarios/:id`), atualizar (`PATCH /usuarios/:id`) e inativar (`POST /usuarios/:id/inativar`) usuários com `nome`, `perfil` (`garcom`, `caixa`, `gerente`) e `ativo` (`Boolean`). | Essencial | Módulo 1 |
+| **RF02** | **Gerenciar Usuários Operadores (CRUD + Inativação)** | O sistema deve permitir cadastrar (`POST /usuarios`), listar por perfil e status (`GET /usuarios?perfil=&ativo=`), consultar (`GET /usuarios/:id`), atualizar (`PATCH /usuarios/:id`) e inativar (`POST /usuarios/:id/inativar`) usuários com `nome`, `perfil` (`garcom`, `caixa`, `gerente`, `cozinha`) e `ativo` (`Boolean`). | Essencial | Módulo 1 |
 | **RF03** | **Abrir Comanda em Mesa Livre** | O sistema deve permitir abrir uma nova comanda (`POST /comandas`) informando `mesa`, `garcom_id` e `nome_cliente` (opcional). A comanda nasce com `status = "aberta"` e timestamp `aberta_em`. Deve rejeitar com `409 MESA_OCUPADA` se já houver comanda `aberta` na mesma mesa e com `422 GARCOM_INVALIDO` se o usuário não existir, estiver inativo ou não possuir perfil `garcom`. | Essencial | Módulo 1 |
 | **RF04** | **Lançar Item em Comanda Aberta com Congelamento de Preço** | O sistema deve permitir adicionar um item a uma comanda `aberta` (`POST /comandas/:id/itens`) informando `produto_id` e `quantidade` ($> 0$). No ato do lançamento, o backend deve copiar e gravar no item os campos `nome_copiado` e `preco_copiado` a partir do cadastro vigente do produto. | Essencial | Módulo 1 |
 | **RF05** | **Ajustar Quantidade ou Remover Item de Comanda Aberta** | O sistema deve permitir alterar a quantidade de um item já lançado (`PATCH /comandas/:id/itens/:itemId` com `quantidade > 0`, validando disponibilidade de estoque para acréscimos) ou remover o item (`DELETE /comandas/:id/itens/:itemId`), exclusivamente enquanto a comanda estiver `aberta`. | Essencial | Módulo 1 |
@@ -88,6 +84,7 @@ stateDiagram-v2
 | **RF16** | **Interface Frontend Web/PWA — Modo Caixa e Retaguarda** | O sistema deve prover na interface Web/PWA uma visão para tablets e desktops dedicada ao operador de caixa e gerente, permitindo filtrar comandas abertas/fechadas, conferir o extrato detalhado da mesa, optar pela taxa de 10%, registrar o pagamento (`dinheiro`, `pix`, `cartao`), vincular CPF de fidelidade e gerenciar o cadastro de produtos e usuários. | Importante | Módulo 1+ |
 | **RF17** | **Expor Endpoints Internos de Fronteira de Contexto** | O núcleo deve expor contratos explícitos de validação entre os contextos `Usuários` (`GET /usuarios/:id/validar-garcom`) e `Produtos` (`GET /produtos/:id/disponibilidade?quantidade=N` e `POST /produtos/baixa-estoque`), garantindo desacoplamento via interfaces de gateway desde o Módulo 1. | Essencial | Módulos 1 e 2 |
 | **RF18** | **Monitoramento de Saúde (`Health Check`) e Documentação OpenAPI** | Todos os serviços do ecossistema devem expor `GET /health` (verificando conectividade com seu banco de dados e retornando `200 {"status":"ok"}`) e `GET /docs` com a especificação interativa OpenAPI/Swagger gerada a partir dos schemas. | Essencial | Módulo 1 a 4 |
+| **RF34** | **Login Operacional por Perfil e Roteamento de Estação** | O frontend deve prover tela de login operacional (`/login`) permitindo selecionar o operador ativo (`GET /usuarios?ativo=true`), definir o usuário logado no store da sessão (`useSessionStore`) e despachar imediatamente para a rota/estação de trabalho correspondente ao seu perfil: `garcom` $\rightarrow$ Modo Garçom PWA (`/garcom`), `caixa` $\rightarrow$ Modo Caixa Desktop (`/caixa`), `gerente` $\rightarrow$ Painel de Gestão (`/gestao`), `cozinha` $\rightarrow$ Painel KDS (`/kds`). No Módulo 1, opera sem exigência de senha/JWT para máxima fluidez de salão. | Essencial | Módulo 1+ |
 
 ---
 
@@ -162,6 +159,8 @@ As Regras de Negócio abaixo governam invariantes de domínio e restrições arq
 | **RN20** | **Sequenciamento de Estados da Ficha KDS** | Uma ficha de preparo no `kds-service` nasce no estado `recebido` e só pode avançar linearmente (`recebido` $\rightarrow$ `em_preparo` $\rightarrow$ `pronto` $\rightarrow$ `entregue`), exceto quando cancelada enquanto ainda estiver em `recebido`. Fichas já `entregues` são imutáveis. | RF19, RF20, RF23 |
 | **RN21** | **Isolamento Estrito OLTP vs. OLAP** | Consultas agregadas de relatórios gerenciais, Curva ABC, somatórios mensais e rankings de garçom nunca devem ser executadas diretamente sobre as tabelas transacionais de `Comandas` do PDV Core durante o atendimento. Toda carga analítica é servida a partir das visões materializadas/consolidados do `analytics-bi-service`. | RF29, RF30, RF31, RF32, RF33 |
 | **RN22** | **Roteamento de Setor no KDS por Categoria do Produto** | O `kds-service` classifica automaticamente o destino da ficha de preparo (`setor = "bar"` ou `setor = "cozinha"`) com base na `categoria` do produto lançado (ex.: categorias `Bebidas`, `Cervejas`, `Drinks` vão para o painel do **Bar**; categorias `Porções`, `Lanches`, `Pratos`, `Espetinhos` vão para o painel da **Cozinha**). | RF19, RF21 |
+| **RN23** | **Login Operacional por Perfil sem Senha no Módulo 1** | O acesso ao sistema no Módulo 1 é baseado na seleção de perfil e operador ativo da equipe (`garcom`, `caixa`, `gerente`, `cozinha`), sem autenticação pesada (sem JWT/senhas/OAuth). A troca de operador pode ocorrer a qualquer momento através do cabeçalho operacional ou tela `/login`, redirecionando o operador para sua respectiva estação de trabalho. | RF02, RF34 |
+| **RN24** | **Mapeamento de Formas de Pagamento e Quitação Parcial (Split)** | A API persiste formalmente `forma_pagamento: "dinheiro" | "pix" | "cartao"`. No frontend do Modo Caixa, as opções de cartão de crédito, débito e vale-refeição são mapeadas para o valor canônico `"cartao"`. A interface de quitação suporta split payments em múltiplas parcelas até que o saldo restante seja igual a `0.00`, momento no qual a comanda é liquidada no backend. | RF07, RF16 |
 
 ---
 
@@ -373,9 +372,9 @@ flowchart LR
 
 | Serviço / Contexto | Requisitos Funcionais | Regras de Negócio Aplicáveis | Requisitos Não Funcionais | Casos de Uso | Módulo Avaliativo (UERN) |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **PDV Core — Usuários** | RF02, RF17, RF18 | RN08, RN14, RN16 | RNF02, RNF06, RNF07, RNF11 | UC01, UC07 | Módulos 1, 2, 3 |
+| **PDV Core — Usuários** | RF02, RF17, RF18, RF34 | RN08, RN14, RN16, RN23 | RNF02, RNF06, RNF07, RNF11 | UC01, UC07 | Módulos 1, 2, 3 |
 | **PDV Core — Produtos e Estoque** | RF01, RF11, RF12, RF13, RF17, RF18 | RN04, RN06, RN10, RN13, RN14, RN15, RN16, RN18 | RNF01, RNF02, RNF04, RNF09, RNF10 | UC02, UC05, UC07 | Módulos 1, 2, 3, 4 |
-| **PDV Core — Comandas, Caixa e PWA** | RF03, RF04, RF05, RF06, RF07, RF08, RF09, RF10, RF14, RF15, RF16, RF18 | RN01, RN02, RN03, RN04, RN05, RN07, RN08, RN09, RN10, RN11, RN12, RN15, RN17 | RNF01, RNF02, RNF03, RNF04, RNF05, RNF08, RNF12 | UC01, UC02, UC04, UC05, UC06 | Módulos 1, 2, 3, 4 |
+| **PDV Core — Comandas, Caixa e PWA** | RF03, RF04, RF05, RF06, RF07, RF08, RF09, RF10, RF14, RF15, RF16, RF18, RF34 | RN01, RN02, RN03, RN04, RN05, RN07, RN08, RN09, RN10, RN11, RN12, RN15, RN17, RN23, RN24 | RNF01, RNF02, RNF03, RNF04, RNF05, RNF08, RNF12 | UC01, UC02, UC04, UC05, UC06 | Módulos 1, 2, 3, 4 |
 | **Satélite 1 — `kds-service`** | RF19, RF20, RF21, RF22, RF23 | RN16, RN17, RN18, RN20, RN22 | RNF02, RNF07, RNF09, RNF10, RNF11 | UC02, UC03, UC04, UC06 | Módulos 2, 3, 4 |
 | **Satélite 2 — `fidelidade-service`** | RF24, RF25, RF26, RF27, RF28 | RN14, RN15, RN16, RN17, RN18, RN19 | RNF02, RNF04, RNF07, RNF09, RNF10, RNF11 | UC05 | Módulos 2, 3, 4 |
 | **Satélite 3 — `analytics-bi-service`** | RF29, RF30, RF31, RF32, RF33 | RN15, RN16, RN17, RN18, RN21 | RNF02, RNF04, RNF07, RNF09, RNF10, RNF11 | UC05, UC08 | Módulos 2, 3, 4 |
