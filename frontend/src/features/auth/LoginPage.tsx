@@ -2,9 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import {
   Utensils,
   Monitor,
-  ChefHat,
   ChevronRight,
-  Moon,
   UserPlus,
   RefreshCw,
   AlertCircle,
@@ -13,6 +11,8 @@ import { useUsuariosAtivos, useCriarUsuario } from '../../hooks/useUsuarios';
 import { useSessionStore } from '../../stores/useSessionStore';
 import type { Usuario } from '../../types/api';
 import { Button } from '../../components/ui/Button';
+import { Logo, LogoMark } from '../../components/ui/Logo';
+import { ThemeToggle } from '../../components/ui/ThemeToggle';
 
 const STORAGE_KEY_ULTIMO_ACESSO = 'vapt_pdv_ultimo_acesso';
 
@@ -71,7 +71,6 @@ export function LoginPage() {
   // Agrupamento dos colaboradores ativos por perfil real vindo do banco
   const garcons = useMemo(() => usuarios.filter((u) => u.perfil === 'garcom'), [usuarios]);
   const caixas = useMemo(() => usuarios.filter((u) => u.perfil === 'caixa'), [usuarios]);
-  const gerentes = useMemo(() => usuarios.filter((u) => u.perfil === 'gerente'), [usuarios]);
 
   // Colaborador em destaque para "Último acesso"
   // Prioriza quem foi salvo no localStorage, ou o primeiro garçom/caixa ativo retornado pelo banco
@@ -136,13 +135,10 @@ export function LoginPage() {
           ───────────────────────────────────────────────────────────── */}
       <aside className="hidden md:flex w-[340px] lg:w-[380px] bg-nav text-white flex-col justify-between p-8 lg:p-10 shrink-0 select-none border-r border-[#43342A]">
         <div>
-          {/* Logo V Mostarda */}
-          <div className="w-12 h-12 rounded-[14px] bg-brand text-on-brand flex items-center justify-center font-black text-2xl shadow-soft">
-            V
-          </div>
+          <Logo size={52} comNome fundo="escuro" />
 
-          <h1 className="text-white font-extrabold text-2xl lg:text-3xl tracking-tight mt-6 mb-2">
-            VaptPDV Bar
+          <h1 className="text-white font-extrabold text-xl lg:text-2xl tracking-tight mt-6 mb-2">
+            Bar &amp; Restaurante
           </h1>
           <p className="text-[#C9B8A6] text-xs lg:text-sm leading-relaxed mb-10">
             Salão, caixa e cozinha no mesmo ritmo.
@@ -158,10 +154,6 @@ export function LoginPage() {
               <Monitor className="w-4 h-4 text-[#C9B8A6] shrink-0" />
               <span>Caixa no balcão</span>
             </div>
-            <div className="flex items-center gap-3">
-              <ChefHat className="w-4 h-4 text-[#C9B8A6] shrink-0" />
-              <span>KDS na cozinha e no bar</span>
-            </div>
           </div>
         </div>
 
@@ -175,15 +167,14 @@ export function LoginPage() {
           HEADER COMPACTO (MOBILE) — Fiel a X01 Login (celular).png
           ───────────────────────────────────────────────────────────── */}
       <header className="md:hidden flex items-center gap-3 p-5 pb-2">
-        <div className="w-11 h-11 rounded-[14px] bg-brand text-on-brand flex items-center justify-center font-black text-xl shadow-soft shrink-0">
-          V
-        </div>
-        <div>
-          <h1 className="font-extrabold text-lg text-text tracking-tight leading-tight">
-            VaptPDV Bar
+        <LogoMark size={44} className="shrink-0" />
+        <div className="flex-1">
+          <h1 className="font-black text-lg text-text tracking-tight leading-tight">
+            Vapt<span className="text-brand">PDV</span>
           </h1>
           <p className="text-xs text-text-2">Acesso Operacional</p>
         </div>
+        <ThemeToggle variante="icon" />
       </header>
 
       {/* ─────────────────────────────────────────────────────────────
@@ -293,7 +284,7 @@ export function LoginPage() {
               )}
 
               {/* Seções por Perfil Real do Banco */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Coluna 1: Garçons */}
                 {garcons.length > 0 && (
                   <div>
@@ -307,7 +298,7 @@ export function LoginPage() {
                           className="w-full bg-surface border border-border hover:border-brand rounded-[16px] p-3.5 flex items-center justify-between shadow-soft hover:shadow-card transition-all text-left group active:scale-[0.98]"
                         >
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-10 h-10 rounded-full bg-[#FDF0D2] text-[#8A5200] font-black text-xs flex items-center justify-center shrink-0">
+                            <div className="w-10 h-10 rounded-full bg-brand-soft text-brand-text font-black text-xs flex items-center justify-center shrink-0">
                               {obterIniciais(garcom.nome)}
                             </div>
                             <span className="font-bold text-sm text-text truncate group-hover:text-brand-text transition-colors">
@@ -334,7 +325,7 @@ export function LoginPage() {
                           className="w-full bg-surface border border-border hover:border-brand rounded-[16px] p-3.5 flex items-center justify-between shadow-soft hover:shadow-card transition-all text-left group active:scale-[0.98]"
                         >
                           <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-10 h-10 rounded-full bg-[#FDF0D2] text-[#8A5200] font-black text-xs flex items-center justify-center shrink-0">
+                            <div className="w-10 h-10 rounded-full bg-brand-soft text-brand-text font-black text-xs flex items-center justify-center shrink-0">
                               {obterIniciais(caixa.nome)}
                             </div>
                             <span className="font-bold text-sm text-text truncate group-hover:text-brand-text transition-colors">
@@ -348,47 +339,14 @@ export function LoginPage() {
                   </div>
                 )}
 
-                {/* Coluna 3: Gerência (se houver no banco) */}
-                {gerentes.length > 0 && (
-                  <div>
-                    <div className="text-xs font-bold text-text-2 mb-3">Gerência</div>
-                    <div className="space-y-2.5">
-                      {gerentes.map((gerente) => (
-                        <button
-                          key={gerente.id}
-                          type="button"
-                          onClick={() => handleEntrarComUsuario(gerente)}
-                          className="w-full bg-surface border border-border hover:border-brand rounded-[16px] p-3.5 flex items-center justify-between shadow-soft hover:shadow-card transition-all text-left group active:scale-[0.98]"
-                        >
-                          <div className="flex items-center gap-3 min-w-0">
-                            <div className="w-10 h-10 rounded-full bg-[#FDF0D2] text-[#8A5200] font-black text-xs flex items-center justify-center shrink-0">
-                              {obterIniciais(gerente.nome)}
-                            </div>
-                            <span className="font-bold text-sm text-text truncate group-hover:text-brand-text transition-colors">
-                              {gerente.nome}
-                            </span>
-                          </div>
-                          <ChevronRight className="w-4 h-4 text-text-2 group-hover:text-brand-text group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           )}
         </div>
 
-        {/* Barra Inferior com Botão Tema — Fiel ao rodapé direito de X01 */}
-        <div className="pt-8 flex justify-end">
-          <button
-            type="button"
-            className="px-4 py-2 rounded-full border border-border bg-surface hover:bg-surface-2 text-xs font-semibold text-text flex items-center gap-2 shadow-soft transition-all"
-            title="Alternar tema visual"
-          >
-            <Moon className="w-3.5 h-3.5 text-text-2" />
-            <span>Tema</span>
-          </button>
+        {/* Barra Inferior com Botão Tema — alterna entre claro e escuro */}
+        <div className="pt-8 hidden md:flex justify-end">
+          <ThemeToggle />
         </div>
       </main>
     </div>

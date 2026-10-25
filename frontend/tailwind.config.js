@@ -1,5 +1,9 @@
 /** @type {import('tailwindcss').Config} */
+// Cores baseadas em variáveis CSS (src/index.css) para suportar tema claro/escuro.
+const cor = (nome) => `rgb(var(--c-${nome}) / <alpha-value>)`;
+
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -7,38 +11,42 @@ export default {
   theme: {
     extend: {
       colors: {
-        bg: '#FBF7F1',
+        bg: cor('bg'),
         surface: {
-          DEFAULT: '#FFFFFF',
-          2: '#F3ECE1',
+          DEFAULT: cor('surface'),
+          2: cor('surface-2'),
         },
         border: {
-          DEFAULT: '#E5DACB',
+          DEFAULT: cor('border'),
         },
         text: {
-          DEFAULT: '#2B2019',
-          2: '#6A5849',
+          DEFAULT: cor('text'),
+          2: cor('text-2'),
         },
         brand: {
-          DEFAULT: '#F2A81D',
-          soft: '#FDF0D2',
-          text: '#8A5200',
+          DEFAULT: cor('brand'),
+          soft: cor('brand-soft'),
+          text: cor('brand-text'),
+          hover: cor('brand-hover'),
+          edge: cor('brand-edge'),
         },
-        'on-brand': '#2B2019',
-        nav: '#3A2A21',
+        'on-brand': cor('on-brand'),
+        nav: cor('nav'),
         success: {
-          DEFAULT: '#2F7D4F',
-          soft: '#DDF0E4',
+          DEFAULT: cor('success'),
+          soft: cor('success-soft'),
+          text: cor('success-text'),
         },
         danger: {
-          DEFAULT: '#C4391D',
-          soft: '#FBE3DC',
+          DEFAULT: cor('danger'),
+          soft: cor('danger-soft'),
+          text: cor('danger-text'),
         },
         tint: {
-          beer: '#FBE6B8',
-          snack: '#E4EFD5',
-          drink: '#F8D9CC',
-          dessert: '#EBDDCB',
+          beer: cor('tint-beer'),
+          snack: cor('tint-snack'),
+          drink: cor('tint-drink'),
+          dessert: cor('tint-dessert'),
         },
       },
       fontFamily: {

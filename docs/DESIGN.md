@@ -496,3 +496,9 @@ body { font-family:var(--font-sans); background:var(--color-bg); color:var(--col
 - Toast do Garçom aparece no topo do celular, para não cobrir o rodapé fixo com o CTA principal.
 
 **A validar com usuários reais:** legibilidade do KDS a 3 m com luz de cozinha; tamanho dos alvos do Garçom com luva ou mão molhada; se "Aguardando pagamento" em vermelho gera alarme demais no Caixa em horário de pico; conteúdo completo das telas M04 e M08 quando a spec `telas/40-gestao.md` for fornecida.
+- Logo: selo mostarda (`brand`) de cantos arredondados com um "V" em traço único (`#2B2019`) e uma "moeda" no canto superior direito (alusão ao ponto de venda). Componente `Logo`/`LogoMark` em `frontend/src/components/ui/Logo.tsx`; favicon em `frontend/public/favicon.svg`. O nome é escrito "Vapt" + "PDV" (em mostarda). O selo mantém as mesmas cores nos dois temas.
+- Tema claro/escuro: alternado pelo `ThemeToggle` (Login, Salão do Garçom e topo do Caixa), persistido em `localStorage` (`vapt_pdv_tema`) e aplicado pela classe `dark` no `<html>`. Os tokens do §12 viram variáveis CSS em canais RGB (`--c-*`, em `frontend/src/index.css`) e o Tailwind os consome com suporte a opacidade (`bg-brand/20`). A sidebar `nav` continua escura nos dois temas.
+- Cancelamento de comanda exige dupla validação: modal em que o operador digita "cancelar comanda" para liberar o botão (Garçom e Caixa).
+- Indicadores técnicos ("API conectada", "Estação", versão do sistema, resolução do terminal) não aparecem nas telas operacionais; falha de comunicação é tratada por estados de erro/toast no ponto da ação.
+- O painel da comanda no Caixa (Venda) é recolhível para um trilho de 72 px (mesa, itens e total).
+

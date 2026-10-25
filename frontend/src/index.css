@@ -3,18 +3,73 @@
 @tailwind utilities;
 
 @layer base {
+  /* Tema claro (padrão) — tokens do docs/DESIGN.md, em canais RGB */
   :root {
+    --c-bg: 251 247 241;
+    --c-surface: 255 255 255;
+    --c-surface-2: 243 236 225;
+    --c-border: 229 218 203;
+    --c-text: 43 32 25;
+    --c-text-2: 106 88 73;
+    --c-brand: 242 168 29;
+    --c-brand-soft: 253 240 210;
+    --c-brand-text: 138 82 0;
+    --c-brand-hover: 224 154 18;
+    --c-brand-edge: 217 148 20;
+    --c-on-brand: 43 32 25;
+    --c-nav: 58 42 33;
+    --c-success: 47 125 79;
+    --c-success-soft: 221 240 228;
+    --c-success-text: 31 90 56;
+    --c-danger: 196 57 29;
+    --c-danger-soft: 251 227 220;
+    --c-danger-text: 143 38 16;
+    --c-tint-beer: 251 230 184;
+    --c-tint-snack: 228 239 213;
+    --c-tint-drink: 248 217 204;
+    --c-tint-dessert: 235 221 203;
+
+    color-scheme: light;
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    color: #2B2019;
-    background-color: #FBF7F1;
+    color: rgb(var(--c-text));
+    background-color: rgb(var(--c-bg));
     -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Tema escuro */
+  :root.dark {
+    --c-bg: 26 19 15;
+    --c-surface: 38 28 22;
+    --c-surface-2: 50 38 32;
+    --c-border: 74 58 48;
+    --c-text: 246 238 228;
+    --c-text-2: 184 166 146;
+    --c-brand: 242 168 29;
+    --c-brand-soft: 74 53 18;
+    --c-brand-text: 245 192 90;
+    --c-brand-hover: 250 186 60;
+    --c-brand-edge: 250 186 60;
+    --c-on-brand: 43 32 25;
+    --c-nav: 18 12 9;
+    --c-success: 76 184 120;
+    --c-success-soft: 28 58 41;
+    --c-success-text: 127 214 160;
+    --c-danger: 232 102 75;
+    --c-danger-soft: 74 32 25;
+    --c-danger-text: 242 154 134;
+    --c-tint-beer: 90 68 32;
+    --c-tint-snack: 51 67 42;
+    --c-tint-drink: 90 51 40;
+    --c-tint-dessert: 74 61 48;
+
+    color-scheme: dark;
   }
 
   body {
     margin: 0;
     min-height: 100vh;
-    background-color: #FBF7F1;
-    color: #2B2019;
+    background-color: rgb(var(--c-bg));
+    color: rgb(var(--c-text));
     font-variant-numeric: tabular-nums;
   }
 
